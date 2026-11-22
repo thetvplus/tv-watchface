@@ -1,0 +1,5 @@
+<fonts>
+    <font id="Clock" filename="clock.fnt"/>
+    <font id="Console" filename="console.fnt"/>
+    <font id="SleepClock" filename="sleep-clock.fnt"/>
+</fonts>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="48" viewBox="0 0 128 48">
+    <defs>
+        <pattern id="rest" width="2" height="2" patternUnits="userSpaceOnUse">
+            <rect width="1" height="1" fill="#000000"/>
+        </pattern>
+    </defs>
+    <rect width="128" height="48" fill="url(#rest)"/>
+</svg>

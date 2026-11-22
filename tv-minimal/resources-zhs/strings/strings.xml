@@ -1,0 +1,36 @@
+<strings>
+    <string id="AppName">tv Minimal</string>
+    <string id="HeartOnWake">仅抬腕读取心率</string>
+    <string id="ClockRefresh">亮屏校时频率</string>
+    <string id="AtMinute">换分时</string>
+    <string id="ThreeSeconds">每 3 秒</string>
+    <string id="EverySecond">每秒</string>
+    <string id="PureGreen">纯绿</string>
+    <string id="DarkGreen">深绿</string>
+    <string id="Blue">蓝色</string>
+    <string id="SystemOrange">系统橙</string>
+    <string id="WarmOrange">暖橙</string>
+    <string id="BatteryDisplay">电量显示</string>
+    <string id="Percentage">百分比</string>
+    <string id="BatteryIcon">电池图标</string>
+    <string id="Red">红色</string>
+    <string id="Purple">紫色</string>
+    <string id="TimeColor">时间颜色</string>
+    <string id="DataColor">数据颜色</string>
+    <string id="ActivityRefresh">活动数据与电量</string>
+    <string id="Mint">薄荷绿</string>
+    <string id="Sky">天蓝</string>
+    <string id="Amber">琥珀</string>
+    <string id="Rose">玫瑰</string>
+    <string id="White">白色</string>
+    <string id="OneMinute">1 分钟</string>
+    <string id="FiveMinutes">5 分钟</string>
+    <string id="FifteenMinutes">15 分钟</string>
+    <string id="Sun">日</string>
+    <string id="Mon">一</string>
+    <string id="Tue">二</string>
+    <string id="Wed">三</string>
+    <string id="Thu">四</string>
+    <string id="Fri">五</string>
+    <string id="Sat">六</string>
+</strings>

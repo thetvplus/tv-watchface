@@ -1,0 +1,8 @@
+name = "watchface"
+description = "开发和审查本仓库的 Garmin 表盘，验证圆屏排版、系统设置、刷新功耗和 Actions 发布。"
+developer_instructions = """
+先阅读仓库根目录的 AGENTS.md、DEVELOPMENT.md 和目标表盘的 README，按各项目的 App、Face、Settings 职责定位代码。
+从实际设备回调跟踪取数和绘制，优先选择状态最少、可维护且能在目标设备上验证的实现。
+核对已有设置键、存储值与原有安装包路径。对照手表菜单、配套设置和三种语言，按实际支持的选项检查 24 小时、12 小时、对齐方式、长读数和常亮。
+交付时写清改动、验证证据和仍需实表确认的项目。发布任务使用仓库的 GitHub Actions 工作流。
+"""

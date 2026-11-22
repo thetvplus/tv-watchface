@@ -1,0 +1,4 @@
+<fonts>
+    <font id="Led" filename="led.fnt"/>
+    <font id="DimLed" filename="dim-led.fnt"/>
+</fonts>

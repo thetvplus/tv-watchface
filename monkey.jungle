@@ -1,0 +1,6 @@
+# Keep the original root build command for tv Minimal.
+project.manifest = tv-minimal/manifest.xml
+base.sourcePath = tv-minimal/source
+base.resourcePath = tv-minimal/resources
+base.lang.zhs = tv-minimal/resources-zhs
+base.lang.zht = tv-minimal/resources-zht

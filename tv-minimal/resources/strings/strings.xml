@@ -1,0 +1,36 @@
+<strings>
+    <string id="AppName">tv Minimal</string>
+    <string id="HeartOnWake">Pulse on wake only</string>
+    <string id="ClockRefresh">Clock sampling</string>
+    <string id="AtMinute">On minute change</string>
+    <string id="ThreeSeconds">Every 3 seconds</string>
+    <string id="EverySecond">Every second</string>
+    <string id="PureGreen">Pure green</string>
+    <string id="DarkGreen">Dark green</string>
+    <string id="Blue">Blue</string>
+    <string id="SystemOrange">System orange</string>
+    <string id="WarmOrange">Warm orange</string>
+    <string id="BatteryDisplay">Battery display</string>
+    <string id="Percentage">Percentage</string>
+    <string id="BatteryIcon">Battery icon</string>
+    <string id="Red">Red</string>
+    <string id="Purple">Purple</string>
+    <string id="TimeColor">Time color</string>
+    <string id="DataColor">Data color</string>
+    <string id="ActivityRefresh">Activity &amp; battery</string>
+    <string id="Mint">Mint</string>
+    <string id="Sky">Sky</string>
+    <string id="Amber">Amber</string>
+    <string id="Rose">Rose</string>
+    <string id="White">White</string>
+    <string id="OneMinute">1 min</string>
+    <string id="FiveMinutes">5 min</string>
+    <string id="FifteenMinutes">15 min</string>
+    <string id="Sun">Su</string>
+    <string id="Mon">Mo</string>
+    <string id="Tue">Tu</string>
+    <string id="Wed">We</string>
+    <string id="Thu">Th</string>
+    <string id="Fri">Fr</string>
+    <string id="Sat">Sa</string>
+</strings>

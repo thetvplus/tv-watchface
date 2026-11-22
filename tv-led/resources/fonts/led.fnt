@@ -1,0 +1,18 @@
+info face="led" size=71 unicode=1 smooth=0 aa=1
+common lineHeight=71 base=71 scaleW=256 scaleH=256 pages=1 packed=0
+page id=0 file="led.png"
+chars count=14
+char id=48 x=0 y=0 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=49 x=44 y=0 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=50 x=88 y=0 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=51 x=132 y=0 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=52 x=176 y=0 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=53 x=0 y=72 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=54 x=44 y=72 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=55 x=88 y=72 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=56 x=132 y=72 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=57 x=176 y=72 width=43 height=71 xoffset=0 yoffset=0 xadvance=54 page=0 chnl=15
+char id=58 x=220 y=72 width=7 height=71 xoffset=0 yoffset=0 xadvance=18 page=0 chnl=15
+char id=65 x=228 y=72 width=9 height=15 xoffset=0 yoffset=56 xadvance=12 page=0 chnl=15
+char id=77 x=238 y=72 width=15 height=15 xoffset=0 yoffset=56 xadvance=26 page=0 chnl=15
+char id=80 x=0 y=144 width=9 height=15 xoffset=0 yoffset=56 xadvance=12 page=0 chnl=15

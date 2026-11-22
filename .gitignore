@@ -1,0 +1,10 @@
+bin/
+*.der
+*.pem
+*.p12
+
+# Local simulator suites and verification tools
+/tv-*/tests/
+/tv-*/tests.jungle
+/tv-*/tools/check_*.py
+__pycache__/

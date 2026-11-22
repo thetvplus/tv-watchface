@@ -1,0 +1,81 @@
+<resources>
+    <properties>
+        <property id="batteryStyle" type="number">0</property>
+        <property id="totalsRefresh" type="number">1</property>
+        <property id="heartRefresh" type="number">0</property>
+        <property id="clockFormat" type="number">0</property>
+        <property id="rowOne" type="number">0</property>
+        <property id="rowTwo" type="number">1</property>
+        <property id="rowThree" type="number">2</property>
+        <property id="alignment" type="number">0</property>
+        <property id="timeColor" type="string">A6FF90</property>
+        <property id="textColor" type="string">76D889</property>
+    </properties>
+    <settings liveValidation="true">
+        <setting propertyKey="@Properties.clockFormat" title="@Strings.ClockFormat">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FollowWatch</listEntry>
+                <listEntry value="1">@Strings.TwelveHour</listEntry>
+                <listEntry value="2">@Strings.TwentyFourHour</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.timeColor" title="@Strings.TimeHex">
+            <settingConfig type="alphaNumeric" maxLength="7"/>
+        </setting>
+        <setting propertyKey="@Properties.textColor" title="@Strings.TextHex">
+            <settingConfig type="alphaNumeric" maxLength="7"/>
+        </setting>
+        <setting propertyKey="@Properties.alignment" title="@Strings.Alignment">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Left</listEntry>
+                <listEntry value="1">@Strings.Center</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.batteryStyle" title="@Strings.BatteryStyle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Percent</listEntry>
+                <listEntry value="1">@Strings.BatteryIcon</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.rowOne" title="@Strings.RowOne">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.HeartRate</listEntry>
+                <listEntry value="1">@Strings.Steps</listEntry>
+                <listEntry value="2">@Strings.Energy</listEntry>
+                <listEntry value="3">@Strings.Distance</listEntry>
+                <listEntry value="4">@Strings.Floors</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.rowTwo" title="@Strings.RowTwo">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.HeartRate</listEntry>
+                <listEntry value="1">@Strings.Steps</listEntry>
+                <listEntry value="2">@Strings.Energy</listEntry>
+                <listEntry value="3">@Strings.Distance</listEntry>
+                <listEntry value="4">@Strings.Floors</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.rowThree" title="@Strings.RowThree">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.HeartRate</listEntry>
+                <listEntry value="1">@Strings.Steps</listEntry>
+                <listEntry value="2">@Strings.Energy</listEntry>
+                <listEntry value="3">@Strings.Distance</listEntry>
+                <listEntry value="4">@Strings.Floors</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.totalsRefresh" title="@Strings.TotalsRefresh">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.OneMinute</listEntry>
+                <listEntry value="1">@Strings.FiveMinutes</listEntry>
+                <listEntry value="2">@Strings.FifteenMinutes</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.heartRefresh" title="@Strings.HeartRefresh">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.OnWake</listEntry>
+                <listEntry value="1">@Strings.LivePulse</listEntry>
+            </settingConfig>
+        </setting>
+    </settings>
+</resources>

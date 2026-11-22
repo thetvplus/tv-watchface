@@ -1,0 +1,19 @@
+<strings>
+    <string id="AppName">tv-orbit</string>
+    <string id="Format">時間格式</string>
+    <string id="SystemFormat">跟隨手錶</string>
+    <string id="Twelve">12 小時</string>
+    <string id="TwentyFour">24 小時</string>
+    <string id="Color">時間顏色</string>
+    <string id="ColorHex">時間顏色（HEX）</string>
+    <string id="White">白色</string>
+    <string id="Amber">琥珀色</string>
+    <string id="Blue">天藍色</string>
+    <string id="Green">柔綠色</string>
+    <string id="Custom">自訂 HEX</string>
+    <string id="InvalidHex">請輸入六位色碼，如 FFAA00</string>
+    <string id="Scale">軌道比例</string>
+    <string id="LinearScale">線性實距</string>
+    <string id="LogScale">對數距離</string>
+    <string id="InnerScale">內圈優先</string>
+</strings>

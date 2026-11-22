@@ -1,0 +1,138 @@
+name: Build and release 265S
+run-name: ${{ github.ref_name }} · ${{ inputs.rebuild_release && 'Rebuild release' || 'Release' }}
+on:
+  push:
+    tags: ['v*', 'tv-terminal-v*', 'tv-led-v*', 'tv-orbit-v*']
+  workflow_dispatch:
+    inputs:
+      rebuild_release:
+        description: Recreate the release for the selected version tag after the build succeeds
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.ref_type == 'tag'
+    runs-on: windows-2025
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Install pinned SDK and 265S device definition
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -cmatch '^(tv-terminal|tv-led|tv-orbit)-v') {
+            $face = $Matches[1]
+            $prefix = "$face-v"
+          } else {
+            $face = 'tv-minimal'
+            $prefix = 'v'
+          }
+          $file = @{'tv-minimal' = 'TVMIN.prg'; 'tv-terminal' = 'TVTERM.prg'; 'tv-led' = 'TVLED.prg'; 'tv-orbit' = 'TVORBIT.prg'}[$face]
+          $version = ([xml](Get-Content -Raw "$face/manifest.xml")).manifest.application.version
+          if ($tag -cnotmatch ('^' + [regex]::Escape("$prefix$version") + '(-preview\.[1-9][0-9]*)?$')) {
+            throw "Tag and $face manifest version differ"
+          }
+          $suffix = $tag.Substring($prefix.Length)
+          "FACE_DIR=$face", "FACE_FILE=$file", "FACE_VERSION=$suffix" | Add-Content $env:GITHUB_ENV
+          function Get-CheckedFile($url, $path, $sha) {
+            curl.exe --fail --location --retry 3 --silent --show-error --output $path $url
+            if ($LASTEXITCODE -or (Get-FileHash $path).Hash -ne $sha) { throw "Download verification failed for $path" }
+          }
+          $sdk = Join-Path $env:RUNNER_TEMP 'ciq'
+          $devices = Join-Path $env:APPDATA 'Garmin/ConnectIQ/Devices'
+          New-Item -ItemType Directory -Force $sdk,$devices | Out-Null
+          $sdkZip = Join-Path $env:RUNNER_TEMP 'sdk.zip'
+          $deviceTgz = Join-Path $env:RUNNER_TEMP 'devices.tar.gz'
+          Get-CheckedFile 'https://developer.garmin.com/downloads/connect-iq/sdks/connectiq-sdk-win-9.3.0-2026-10-20-95888f262.zip' $sdkZip '0aa422e4cc1fce10219a5051ea3608a4e87174d156c9e921bc9bd7cf3bfc1dde'
+          Get-CheckedFile 'https://raw.githubusercontent.com/DuckSoft/setup-connectiq-actions/64f7145dcd1087c262d89f5f714fa03af27b3cba/devices.tar.gz' $deviceTgz '329ebb68bf55a07d86cda993a1381b20f7fc786eba059737abbf1d72778d2feb'
+          tar -xf $sdkZip -C $sdk
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          tar -xzf $deviceTgz -C $devices ./fr265s
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Compile and sign the selected watch face
+        shell: pwsh
+        env:
+          CIQ_KEY: ${{ secrets.CIQ_SIGNING_KEY_B64 }}
+        run: |
+          $key = Join-Path $env:RUNNER_TEMP 'ciq-signing.der'
+          try {
+            [IO.File]::WriteAllBytes($key, [Convert]::FromBase64String($env:CIQ_KEY))
+            Remove-Item Env:CIQ_KEY
+            & "$env:RUNNER_TEMP/ciq/bin/monkeyc.bat" -f "$env:FACE_DIR/monkey.jungle" -d fr265s -y $key -o "bin/$env:FACE_FILE" -r -w -l 3 -O 2
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          } finally {
+            if (Test-Path -LiteralPath $key) { Remove-Item -LiteralPath $key -Force }
+          }
+
+      - name: Publish signed watch face
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REBUILD_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_release }}
+        run: |
+          $file = $env:FACE_FILE
+          $digest = (Get-FileHash "bin/$file").Hash.ToLowerInvariant()
+          $tag = $env:GITHUB_REF_NAME
+          $readme = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/tree/$tag/$env:FACE_DIR#readme"
+          $title = if ($env:FACE_DIR -eq 'tv-minimal') { 'tv Minimal' } else { $env:FACE_DIR }
+          $preview = $env:FACE_VERSION.Contains('-preview.')
+          $isPreview = $preview.ToString().ToLowerInvariant()
+          $release = gh release view $tag --json isDraft,isImmutable,assets 2>$null | ConvertFrom-Json
+          if ($env:REBUILD_RELEASE -eq 'true' -and $release) {
+            if ($release.isImmutable) { throw "Cannot replace immutable release $tag" }
+            # An explicit rebuild replaces stale draft notes and assets as well. The tag stays in place.
+            gh release delete $tag --yes
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            $release = $null
+          }
+          if (!$release) {
+            $summary = @{
+              'tv-minimal'  = '系统数字时钟、心率、步数及热量，支持电量和取样设置。'
+              'tv-terminal' = '终端风格时钟、日期与电量，三行数据及对齐方式可选。'
+              'tv-led'      = '复古七段时钟，跟随系统 12／24 小时制，支持自定义颜色和亮屏校时。'
+              'tv-orbit'    = '八颗行星的日心星图，支持内圈优先、线性实距和对数距离。'
+            }[$env:FACE_DIR]
+            $notes = "$title v$env:FACE_VERSION`n`n$summary`n`nForerunner 265S · English / 简体中文 / 繁體中文.`n`n[Installation and performance / 安装与性能]($readme)`n`nSHA-256: $digest"
+            $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+            Set-Content -LiteralPath $notesPath -Value $notes -Encoding utf8
+            gh release create $tag --draft --verify-tag --title "$title v$env:FACE_VERSION" --notes-file $notesPath "--prerelease=$isPreview"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            $release = @{ isDraft = $true; assets = @() }
+          }
+          $package = @($release.assets | Where-Object name -CEQ $file)
+          if ($release.isDraft) {
+            # A failed GitHub upload can leave an empty starter asset in the draft.
+            if ($package.Count -eq 1 -and $package[0].state -eq 'starter' -and $package[0].size -eq 0) {
+              gh release delete-asset $tag $file --yes
+              if ($LASTEXITCODE) { exit $LASTEXITCODE }
+              $package = @()
+            }
+            if ($package.Count -eq 0) {
+              gh release upload $tag "bin/$file"
+              if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            }
+          }
+          $uploaded = gh release view $tag --json assets | ConvertFrom-Json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $remote = @($uploaded.assets | Where-Object name -CEQ $file)
+          if ($remote.Count -ne 1 -or $remote[0].digest -cne "sha256:$digest") { throw "Release asset digest mismatch for $tag" }
+          if ($release.isDraft) {
+            # Existing Minimal installations use releases/latest/download/TVMIN.prg.
+            $latest = if ($preview -or $env:FACE_DIR -ne 'tv-minimal') { 'false' } else { 'true' }
+            gh release edit $tag --draft=false "--latest=$latest" "--prerelease=$isPreview"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }

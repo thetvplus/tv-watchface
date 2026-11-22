@@ -1,0 +1,14 @@
+<resources>
+    <properties>
+        <property id="timeColor" type="string">FF3924</property>
+        <property id="clockSync" type="number">60</property>
+    </properties>
+    <settings liveValidation="true">
+        <setting propertyKey="@Properties.timeColor" title="@Strings.ColorHex">
+            <settingConfig type="alphaNumeric" maxLength="7"/>
+        </setting>
+        <setting propertyKey="@Properties.clockSync" title="@Strings.ClockSync">
+            <settingConfig type="numeric" min="1" max="60" errorMessage="@Strings.InvalidSeconds"/>
+        </setting>
+    </settings>
+</resources>

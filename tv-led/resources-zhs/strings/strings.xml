@@ -1,0 +1,17 @@
+<strings>
+    <string id="AppName">tv-led</string>
+    <string id="Color">时间颜色</string>
+    <string id="ColorHex">时间颜色（HEX）</string>
+    <string id="Red">LED 红</string>
+    <string id="Amber">琥珀色</string>
+    <string id="Green">磷光绿</string>
+    <string id="White">柔白色</string>
+    <string id="Custom">自定义 HEX</string>
+    <string id="CustomSeconds">自定义（1–60 秒）</string>
+    <string id="InvalidSeconds">请输入 1 到 60 的整数秒</string>
+    <string id="InvalidHex">请输入六位色值，如 FF3924</string>
+    <string id="ClockSync">亮屏校时频率</string>
+    <string id="AtMinute">换分时</string>
+    <string id="ThreeSeconds">每 3 秒</string>
+    <string id="EverySecond">每秒</string>
+</strings>

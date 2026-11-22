@@ -1,0 +1,17 @@
+<strings>
+    <string id="AppName">tv-led</string>
+    <string id="Color">Time color</string>
+    <string id="ColorHex">Time color (HEX)</string>
+    <string id="Red">LED red</string>
+    <string id="Amber">Amber</string>
+    <string id="Green">Phosphor green</string>
+    <string id="White">Soft white</string>
+    <string id="Custom">Custom HEX</string>
+    <string id="CustomSeconds">Custom (1–60 s)</string>
+    <string id="InvalidSeconds">Enter 1 to 60 whole seconds</string>
+    <string id="InvalidHex">Enter six hex digits, e.g. FF3924</string>
+    <string id="ClockSync">Clock sampling</string>
+    <string id="AtMinute">On minute change</string>
+    <string id="ThreeSeconds">Every 3 seconds</string>
+    <string id="EverySecond">Every second</string>
+</strings>

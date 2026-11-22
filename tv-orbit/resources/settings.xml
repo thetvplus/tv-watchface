@@ -1,0 +1,26 @@
+<resources>
+    <properties>
+        <property id="clockFormat" type="number">0</property>
+        <property id="timeColor" type="string">FFFFFF</property>
+        <property id="orbitScale" type="number">2</property>
+    </properties>
+    <settings liveValidation="true">
+        <setting propertyKey="@Properties.clockFormat" title="@Strings.Format">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.SystemFormat</listEntry>
+                <listEntry value="12">@Strings.Twelve</listEntry>
+                <listEntry value="24">@Strings.TwentyFour</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.timeColor" title="@Strings.ColorHex">
+            <settingConfig type="alphaNumeric" maxLength="7"/>
+        </setting>
+        <setting propertyKey="@Properties.orbitScale" title="@Strings.Scale">
+            <settingConfig type="list">
+                <listEntry value="2">@Strings.InnerScale</listEntry>
+                <listEntry value="0">@Strings.LinearScale</listEntry>
+                <listEntry value="1">@Strings.LogScale</listEntry>
+            </settingConfig>
+        </setting>
+    </settings>
+</resources>

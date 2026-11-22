@@ -1,0 +1,19 @@
+<strings>
+    <string id="AppName">tv-orbit</string>
+    <string id="Format">Time format</string>
+    <string id="SystemFormat">Use watch format</string>
+    <string id="Twelve">12-hour</string>
+    <string id="TwentyFour">24-hour</string>
+    <string id="Color">Time color</string>
+    <string id="ColorHex">Time color (HEX)</string>
+    <string id="White">White</string>
+    <string id="Amber">Amber</string>
+    <string id="Blue">Sky blue</string>
+    <string id="Green">Soft green</string>
+    <string id="Custom">Custom HEX</string>
+    <string id="InvalidHex">Enter six hex digits, e.g. FFAA00</string>
+    <string id="Scale">Orbit scale</string>
+    <string id="LinearScale">True scale</string>
+    <string id="LogScale">Log scale</string>
+    <string id="InnerScale">Inner system</string>
+</strings>

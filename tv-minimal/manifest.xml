@@ -1,0 +1,8 @@
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+    <iq:application id="135807ac9bdd4db2ac4626dc0bf20ad8" type="watchface" entry="TvMinimalApp" name="@Strings.AppName" launcherIcon="@Drawables.LauncherIcon" minApiLevel="5.0.0" version="1.0.0">
+        <iq:products><iq:product id="fr265s"/></iq:products>
+        <iq:permissions/>
+        <iq:languages><iq:language>eng</iq:language><iq:language>zhs</iq:language><iq:language>zht</iq:language></iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
