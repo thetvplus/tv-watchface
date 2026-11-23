@@ -14,9 +14,9 @@ Forerunner 265S 的七段 LED 表盘。纯黑底上只有一行时间，数字�
 
 ## 安装与更新
 
-1. 下载 [TVLED.prg](https://github.com/thetvplus/tv-watchface/releases/download/tv-led-v1.1.0/TVLED.prg)，通过 USB 连接手表。
-2. 将文件复制到 `Internal Storage/GARMIN/Apps`。更新时替换同名文件即可保留设置。
-3. 断开 USB，在时间页长按 UP，进入「表盘」，选择 **tv-led** 并应用。
+下载 [TVLED.prg](https://github.com/thetvplus/tv-watchface/releases/download/tv-led-v1.1.0/TVLED.prg)。
+
+[USB 安装](../README.md#install) · [覆盖更新](../README.md#update) · [卸载](../README.md#uninstall)
 
 ## 表盘设置
 

@@ -10,9 +10,9 @@ Garmin Forerunner 265S 的黑底表盘。中央显示时间，上方显示电量
 
 ## 安装与更新
 
-1. 下载 [TVMIN.prg](https://github.com/thetvplus/tv-watchface/releases/latest/download/TVMIN.prg)，通过 USB 连接手表。
-2. 将文件复制到手表的 `Internal Storage/GARMIN/Apps`。更新时选择替换同名文件，保留已有设置。
-3. 传输完成后断开 USB。首次安装时，在时间页长按 UP，进入「表盘」，选择 **tv Minimal** 并应用。
+下载 [TVMIN.prg](https://github.com/thetvplus/tv-watchface/releases/latest/download/TVMIN.prg)。
+
+[USB 安装](../README.md#install) · [覆盖更新](../README.md#update) · [卸载](../README.md#uninstall)
 
 ## 表盘设置
 

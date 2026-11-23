@@ -87,6 +87,7 @@ jobs:
           $file = $env:FACE_FILE
           $digest = (Get-FileHash "bin/$file").Hash.ToLowerInvariant()
           $tag = $env:GITHUB_REF_NAME
+          $guide = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY#install"
           $readme = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/tree/$tag/$env:FACE_DIR#readme"
           $title = if ($env:FACE_DIR -eq 'tv-minimal') { 'tv Minimal' } else { $env:FACE_DIR }
           $preview = $env:FACE_VERSION.Contains('-preview.')
@@ -119,7 +120,7 @@ jobs:
               'tv-led'      = '复古七段时钟，跟随系统 12／24 小时制，支持三档数字大小、50–150% 自定义高度、颜色和亮屏校时。'
               'tv-orbit'    = '八颗行星的日心星图。亮蓝色地球更易辨认，支持四种轨道样式（含等距同心圆），位置可选每 1、2 或 3 天更新，默认每 2 天。'
             }[$env:FACE_DIR]
-            $notes = "$title v$env:FACE_VERSION`n`n$summary`n`nForerunner 265S · English / 简体中文 / 繁體中文.`n`n[Installation and performance / 安装与性能]($readme)`n`nSHA-256: $digest"
+            $notes = "$title v$env:FACE_VERSION`n`n$summary`n`nForerunner 265S · English / 简体中文 / 繁體中文.`n`n[Install, update and uninstall / 安装、更新与卸载]($guide) · [Version details / 版本说明]($readme)`n`nSHA-256: $digest"
             $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
             Set-Content -LiteralPath $notesPath -Value $notes -Encoding utf8
             gh release create $tag --draft --verify-tag --title "$title v$env:FACE_VERSION" --notes-file $notesPath "--prerelease=$isPreview"
