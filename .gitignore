@@ -4,7 +4,10 @@ bin/
 *.p12
 
 # Local simulator suites and verification tools
-/tv-*/tests/
-/tv-*/tests.jungle
+tests/
+tests.jungle
+test_*.py
+*_test.py
 /tv-*/tools/check_*.py
+.pytest_cache/
 __pycache__/
