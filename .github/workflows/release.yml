@@ -104,7 +104,7 @@ jobs:
               'tv-minimal'  = '系统数字时钟、心率、步数及热量，支持电量和取样设置。'
               'tv-terminal' = '终端风格时钟、日期与电量，三行数据及对齐方式可选。'
               'tv-led'      = '复古七段时钟，跟随系统 12／24 小时制，支持自定义颜色和亮屏校时。'
-              'tv-orbit'    = '八颗行星的日心星图，支持内圈优先、线性实距和对数距离。'
+              'tv-orbit'    = '八颗行星的日心星图。亮蓝色地球更易辨认，支持四种轨道样式（含等距同心圆），位置可选每 1、2 或 3 天更新，默认每 2 天。'
             }[$env:FACE_DIR]
             $notes = "$title v$env:FACE_VERSION`n`n$summary`n`nForerunner 265S · English / 简体中文 / 繁體中文.`n`n[Installation and performance / 安装与性能]($readme)`n`nSHA-256: $digest"
             $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'

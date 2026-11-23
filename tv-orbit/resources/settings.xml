@@ -3,6 +3,7 @@
         <property id="clockFormat" type="number">0</property>
         <property id="timeColor" type="string">FFFFFF</property>
         <property id="orbitScale" type="number">2</property>
+        <property id="orbitRefreshDays" type="number">2</property>
     </properties>
     <settings liveValidation="true">
         <setting propertyKey="@Properties.clockFormat" title="@Strings.Format">
@@ -18,8 +19,16 @@
         <setting propertyKey="@Properties.orbitScale" title="@Strings.Scale">
             <settingConfig type="list">
                 <listEntry value="2">@Strings.InnerScale</listEntry>
-                <listEntry value="0">@Strings.LinearScale</listEntry>
-                <listEntry value="1">@Strings.LogScale</listEntry>
+                <listEntry value="0">@Strings.NearScale</listEntry>
+                <listEntry value="1">@Strings.BalancedScale</listEntry>
+                <listEntry value="3">@Strings.ConcentricScale</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.orbitRefreshDays" title="@Strings.OrbitRefresh">
+            <settingConfig type="list">
+                <listEntry value="1">@Strings.Daily</listEntry>
+                <listEntry value="2">@Strings.EveryTwoDays</listEntry>
+                <listEntry value="3">@Strings.EveryThreeDays</listEntry>
             </settingConfig>
         </setting>
     </settings>

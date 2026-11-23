@@ -18,17 +18,30 @@ const ELEMENTS = [
 const RAD = 0.01745329252;
 const CHART_RADIUS = 128;
 const LIMIT_AU = 30.5;
-const LOG_UNIT = 0.6;
+const NEAR_INNER_AU = 1.23;
+const NEAR_PX_PER_AU = 38.0;
+const BALANCED_UNIT = 5.0;
 const INNER_AU = 1.05;
 const INNER_PX_PER_AU = 46.0;
-const LINEAR = 0;
-const LOG_SCALE = 1;
+const NEAR_SCALE = 0;
+const BALANCED = 1;
 const INNER_FOCUS = 2;
+const CONCENTRIC = 3;
+const RING_STEP = 16;
 const HALF = 134;
-const LINEAR_DOTS = [1, 1, 1, 1, 4, 3, 3, 3];
-const EXPANDED_DOTS = [2, 3, 4, 2, 5, 4, 3, 3];
-const CHART_PALETTE = [Graphics.COLOR_LT_GRAY, 0xFFD480, Graphics.COLOR_BLUE, Graphics.COLOR_RED,
-    Graphics.COLOR_ORANGE, Graphics.COLOR_YELLOW, 0x80D5FF, 0x0055FF, 0x485055, Graphics.COLOR_BLACK];
+const EARTH = 2;
+const SUN_DOT = 4;
+const SUN_COLOR = 0xFFD45A;
+const EARTH_HIGHLIGHT = 0xBBECFF;
+const TRACK_COLOR = 0x3E4850;
+const EARTH_TRACK_COLOR = 0x32596A;
+const DOTS = [2, 3, 4, 2, 4, 4, 3, 3];
+const CHART_PALETTE = [0xBABFC6, 0xE9BE90, 0x42B9FF, 0xE6755E,
+    0xE6A264, 0xDBC389, 0x73D9C7, 0x6984F7, SUN_COLOR, EARTH_HIGHLIGHT,
+    TRACK_COLOR, EARTH_TRACK_COLOR, Graphics.COLOR_BLACK];
+const DAILY = 1;
+const DEFAULT_REFRESH_DAYS = 2;
+const EVERY_THREE_DAYS = 3;
 
 // Project the heliocentric ellipse onto the J2000 ecliptic, in astronomical units.
 function planetXY(index as Number, centuries as Float) as Array<Float> {
@@ -36,13 +49,13 @@ function planetXY(index as Number, centuries as Float) as Array<Float> {
     var a = el[0] + el[1] * centuries;
     var e = el[2] + el[3] * centuries;
     var tilt = (el[4] + el[5] * centuries) * RAD;
-    var longitude = el[6] + el[7] * centuries;
     var peri = el[8] + el[9] * centuries;
     var node = (el[10] + el[11] * centuries) * RAD;
-    var mean = longitude - peri;
+    var mean = el[6] + el[7] * centuries - peri;
     mean = (mean - 360.0 * Math.floor((mean + 180.0) / 360.0).toFloat()) * RAD;
-    var anomaly = mean;
-    for (var n = 0; n < 3; n++) {
+    // JPL's first-order starting value converges in two corrections for these eccentricities.
+    var anomaly = mean + e * Math.sin(mean).toFloat();
+    for (var n = 0; n < 2; n++) {
         anomaly -= (anomaly - e * Math.sin(anomaly).toFloat() - mean) / (1.0 - e * Math.cos(anomaly).toFloat());
     }
     var xp = a * (Math.cos(anomaly).toFloat() - e);
@@ -58,51 +71,64 @@ function planetXY(index as Number, centuries as Float) as Array<Float> {
 }
 
 class OrbitChart {
-    var utcDay as Number?;
+    var periodStart as Number?;
     var scaleMode as Number = INNER_FOCUS;
+    var refreshDays as Number = DEFAULT_REFRESH_DAYS;
     var x as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0];
     var y as Array<Number> = [0, 0, 0, 0, 0, 0, 0, 0];
     var image as Graphics.BufferedBitmap?;
     var tracks as Graphics.BitmapReference?;
 
-    function setScale(mode as Number) as Void {
-        if (scaleMode == mode) { return; }
+    function configure(mode as Number, days as Number) as Void {
+        if (scaleMode == mode && refreshDays == days) { return; }
+        if (scaleMode != mode) { tracks = null; }
         scaleMode = mode;
-        tracks = null;
-        utcDay = null;
+        refreshDays = days;
+        periodStart = null;
     }
 
     function update(utcSeconds as Number) as Void {
         var day = utcSeconds / 86400;
-        if (utcDay == day) { return; }
-        // The midpoint of Unix day 10957 is J2000.0.
-        var centuries = (day - 10957) / 36525.0;
-        var factor = CHART_RADIUS / LIMIT_AU;
-        var innerEdge = INNER_AU * INNER_PX_PER_AU;
-        if (scaleMode == LOG_SCALE) {
-            factor = CHART_RADIUS / Math.ln(1.0 + LIMIT_AU / LOG_UNIT).toFloat();
-        } else if (scaleMode == INNER_FOCUS) {
-            factor = (CHART_RADIUS - innerEdge) / Math.ln(LIMIT_AU / INNER_AU).toFloat();
+        var start = day - day % refreshDays;
+        if (periodStart == start) { return; }
+        // Sample the midpoint of the UTC window. J2000.0 is noon of Unix day 10957.
+        var centuries = (start - 10957 + (refreshDays - 1) * 0.5) / 36525.0;
+        var innerFocus = scaleMode == INNER_FOCUS;
+        var innerAu = innerFocus ? INNER_AU : NEAR_INNER_AU;
+        var innerRate = innerFocus ? INNER_PX_PER_AU : NEAR_PX_PER_AU;
+        var outerUnit = innerFocus ? INNER_AU : BALANCED_UNIT;
+        var rings = scaleMode == CONCENTRIC;
+        var linear = scaleMode == NEAR_SCALE;
+        var innerLimit = innerAu * innerAu;
+        var innerEdge = innerAu * innerRate;
+        var outerSpan = LIMIT_AU - innerAu;
+        var outerFactor = 0.0;
+        if (!rings) {
+            outerFactor = (CHART_RADIUS - innerEdge) / (linear
+                ? outerSpan : Math.ln(1.0 + outerSpan / outerUnit).toFloat());
         }
         for (var i = 0; i < ELEMENTS.size(); i++) {
             var xy = planetXY(i, centuries);
-            var scale = factor;
-            if (scaleMode != LINEAR) {
-                var r = Math.sqrt(xy[0] * xy[0] + xy[1] * xy[1]).toFloat();
-                if (scaleMode == LOG_SCALE) {
-                    scale *= Math.ln(1.0 + r / LOG_UNIT).toFloat() / r;
-                } else {
-                    scale = r <= INNER_AU ? INNER_PX_PER_AU
-                        : (innerEdge + factor * Math.ln(r / INNER_AU).toFloat()) / r;
-                }
+            var dx = xy[0];
+            var dy = xy[1];
+            var r2 = dx * dx + dy * dy;
+            var scale = innerRate;
+            // All layouts retain the projected heliocentric bearing.
+            if (rings) {
+                scale = (i + 1) * RING_STEP / Math.sqrt(r2).toFloat();
+            } else if (r2 > innerLimit) {
+                var r = Math.sqrt(r2).toFloat();
+                var offset = r - innerAu;
+                var outerDistance = linear ? offset : Math.ln(1.0 + offset / outerUnit).toFloat();
+                scale = (innerEdge + outerFactor * outerDistance) / r;
             }
-            x[i] = Math.round(xy[0] * scale).toNumber();
-            y[i] = -Math.round(xy[1] * scale).toNumber();
+            x[i] = Math.round(dx * scale).toNumber();
+            y[i] = -Math.round(dy * scale).toNumber();
         }
         if (tracks == null) {
-            var resource = scaleMode == LINEAR ? Rez.Drawables.LinearOrbits
-                : (scaleMode == LOG_SCALE ? Rez.Drawables.LogOrbits : Rez.Drawables.InnerOrbits);
-            tracks = WatchUi.loadResource(resource) as Graphics.BitmapReference;
+            var resources = [Rez.Drawables.LinearOrbits, Rez.Drawables.LogOrbits,
+                Rez.Drawables.InnerOrbits, Rez.Drawables.ConcentricOrbits];
+            tracks = WatchUi.loadResource(resources[scaleMode]) as Graphics.BitmapReference;
         }
         if (image == null) {
             try {
@@ -114,7 +140,7 @@ class OrbitChart {
         }
         var cached = image;
         if (cached != null) { paint(cached.getDc(), HALF, HALF); }
-        utcDay = day;
+        periodStart = start;
     }
 
     function draw(dc as Graphics.Dc, cx as Number, cy as Number) as Void {
@@ -126,13 +152,13 @@ class OrbitChart {
     function paint(dc as Graphics.Dc, cx as Number, cy as Number) as Void {
         var background = tracks;
         if (background != null) { dc.drawBitmap(cx - HALF, cy - HALF, background); }
-        var dots = scaleMode == LINEAR ? LINEAR_DOTS : EXPANDED_DOTS;
-        // Paint the Sun last so it remains the origin even during a close conjunction.
-        for (var p = 0; p < dots.size(); p++) {
+        for (var p = 0; p < DOTS.size(); p++) {
             dc.setColor(CHART_PALETTE[p], Graphics.COLOR_TRANSPARENT);
-            dc.fillCircle(cx + x[p], cy + y[p], dots[p]);
+            dc.fillCircle(cx + x[p], cy + y[p], DOTS[p]);
         }
-        dc.setColor(Graphics.COLOR_YELLOW, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(cx, cy, scaleMode == LINEAR ? 1 : 4);
+        dc.setColor(EARTH_HIGHLIGHT, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(cx + x[EARTH] - 1, cy + y[EARTH] - 1, 1);
+        dc.setColor(SUN_COLOR, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(cx, cy, SUN_DOT);
     }
 }

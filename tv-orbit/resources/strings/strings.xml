@@ -13,7 +13,12 @@
     <string id="Custom">Custom HEX</string>
     <string id="InvalidHex">Enter six hex digits, e.g. FFAA00</string>
     <string id="Scale">Orbit scale</string>
-    <string id="LinearScale">True scale</string>
-    <string id="LogScale">Log scale</string>
-    <string id="InnerScale">Inner system</string>
+    <string id="InnerScale">Inner zoom</string>
+    <string id="NearScale">Near true scale</string>
+    <string id="BalancedScale">Balanced spacing</string>
+    <string id="ConcentricScale">Concentric rings</string>
+    <string id="OrbitRefresh">Orbit updates</string>
+    <string id="Daily">Daily</string>
+    <string id="EveryTwoDays">Every 2 days</string>
+    <string id="EveryThreeDays">Every 3 days</string>
 </strings>

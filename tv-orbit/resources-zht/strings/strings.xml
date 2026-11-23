@@ -13,7 +13,12 @@
     <string id="Custom">自訂 HEX</string>
     <string id="InvalidHex">請輸入六位色碼，如 FFAA00</string>
     <string id="Scale">軌道比例</string>
-    <string id="LinearScale">線性實距</string>
-    <string id="LogScale">對數距離</string>
-    <string id="InnerScale">內圈優先</string>
+    <string id="InnerScale">內圈放大</string>
+    <string id="NearScale">近似實距</string>
+    <string id="BalancedScale">均衡分布</string>
+    <string id="ConcentricScale">同心圓</string>
+    <string id="OrbitRefresh">軌道更新</string>
+    <string id="Daily">每天</string>
+    <string id="EveryTwoDays">每 2 天</string>
+    <string id="EveryThreeDays">每 3 天</string>
 </strings>

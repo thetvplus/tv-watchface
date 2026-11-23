@@ -13,7 +13,7 @@
 | [Orbits.mc](tv-orbit/source/Orbits.mc) | Orbit 专用的八颗行星位置计算、缓存和绘制 |
 | 各项目的 `resources*` | 设备资源、三种菜单语言和设备图像 |
 
-Minimal 沿用手表本地 Storage 和 12 个预设色。其他三款的手表菜单和配套设置页共用 Properties。Terminal 的时间制式存储为 0／1／2，Orbit 存储为 0／12／24，分别代表跟随、12 小时和 24 小时。Orbit 的轨道比例以 2 表示内圈优先（默认），0 表示线性实距，1 表示对数距离。维护菜单时保留这些值、Storage 键、属性类型和各款默认值。
+Minimal 沿用手表本地 Storage 和 12 个预设色。其他三款的手表菜单和配套设置页共用 Properties。Terminal 的时间制式存储为 0／1／2，Orbit 存储为 0／12／24，分别代表跟随、12 小时和 24 小时。Orbit 的轨道比例沿用 2／0／1，分别对应内圈放大（默认）、近似实距和均衡分布，新增 3 代表同心圆。`orbitRefreshDays` 存储更新间隔的天数，默认为 2。维护菜单时保留这些值、Storage 键、属性类型和各款默认值。
 
 菜单先放时间制式和颜色，再放布局、电量、数据行，最后放采样频率。每款只列出实际支持的设置。配套设置的项目顺序与手表一致。经 USB 侧载的 PRG 使用手表菜单。手机设置页适用于通过 Connect IQ 商店安装的应用，直接输入 HEX。[Garmin 设置说明](https://forums.garmin.com/developer/connect-iq/w/wiki/4/new-developer-faq#app-settings)
 
@@ -36,7 +36,7 @@ monkeyc -f "$face/monkey.jungle" -d fr265s -y $env:CIQ_DEVELOPER_KEY -o "bin/$fa
 monkeydo "bin/$face/$file.prg" fr265s
 ```
 
-仓库根目录的 `monkey.jungle` 可构建 Minimal。其他项目从同一份仓库检出构建，以便引用相邻的 `shared`。Terminal 和 LED 的字模已随项目提交。运行 `python tv-orbit/tools/make_orbits.py` 可用 Pillow 重建三张轨道底图，运行 `python tv-led/tools/make_fonts.py` 可重建七段字模。测试套件和星历核对脚本由维护者在本地运行。
+仓库根目录的 `monkey.jungle` 可构建 Minimal。其他项目从同一份仓库检出构建，以便引用相邻的 `shared`。Terminal 和 LED 的字模已随项目提交。运行 `python tv-orbit/tools/make_orbits.py` 可用 Pillow 重建四张轨道底图，运行 `python tv-led/tools/make_fonts.py` 可重建七段字模。测试套件和星历核对脚本由维护者在本地运行。
 
 ## v1.0.0 性能与验证
 

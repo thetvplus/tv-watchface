@@ -1,6 +1,6 @@
 """Build the 265S orbit backgrounds from the watch's JPL elements and projection."""
 from ast import literal_eval
-from math import cos, sin, radians, tau, sqrt, hypot, log, log1p
+from math import cos, sin, radians, tau, sqrt, hypot, log1p
 from pathlib import Path
 import re
 
@@ -15,9 +15,11 @@ def constant(name):
 
 
 ELEMENTS = constant("ELEMENTS")
-RADIUS, LIMIT, UNIT, HALF = map(constant, ("CHART_RADIUS", "LIMIT_AU", "LOG_UNIT", "HALF"))
+RADIUS, LIMIT, HALF, RING_STEP = map(constant, ("CHART_RADIUS", "LIMIT_AU", "HALF", "RING_STEP"))
 INNER, INNER_SCALE = map(constant, ("INNER_AU", "INNER_PX_PER_AU"))
-MODES = ("inner", "linear", "log")
+NEAR, NEAR_SCALE, BALANCED_UNIT = map(constant, ("NEAR_INNER_AU", "NEAR_PX_PER_AU", "BALANCED_UNIT"))
+EARTH = constant("EARTH")
+MODES = ("inner", "linear", "log", "concentric")
 # 2026-01-01 noon UTC. Planet markers use the orbital elements of the displayed day.
 TRACK_EPOCH = 9497 / 36525
 
@@ -30,31 +32,45 @@ def ellipse(row, t, anomaly):
     return u*cos(node) - v*sin(node), u*sin(node) + v*cos(node)
 
 
-def project(x, y, mode):
-    scale = RADIUS / LIMIT
-    if mode == "inner":
-        r = hypot(x, y)
-        edge = INNER * INNER_SCALE
-        scale = INNER_SCALE if r <= INNER else (edge + (RADIUS-edge)*log(r/INNER)/log(LIMIT/INNER))/r
-    elif mode == "log":
-        r = hypot(x, y)
-        scale = RADIUS * log1p(r / UNIT) / (log1p(LIMIT / UNIT) * r)
+def project(x, y, mode, planet):
+    r = hypot(x, y)
+    if mode == "concentric":
+        scale = (planet + 1) * RING_STEP / r
+    else:
+        inner, scale = (INNER, INNER_SCALE) if mode == "inner" else (NEAR, NEAR_SCALE)
+        if r > inner:
+            offset = r - inner
+            span = LIMIT - inner
+            edge = inner * scale
+            if mode == "linear":
+                fraction = offset / span
+            else:
+                unit = INNER if mode == "inner" else BALANCED_UNIT
+                fraction = log1p(offset / unit) / log1p(span / unit)
+            scale = (edge + (RADIUS - edge) * fraction) / r
     return x*scale, -y*scale
 
 
 def generate():
+    palette = b"".join(color.to_bytes(3, "big") for color in
+                       (0, constant("TRACK_COLOR"), constant("EARTH_TRACK_COLOR")))
     for mode in MODES:
         image = Image.new("P", (2*HALF+1, 2*HALF+1), 0)
-        image.putpalette([0, 0, 0, 0x48, 0x50, 0x55])
+        image.putpalette(palette)
         draw = ImageDraw.Draw(image)
-        for row in ELEMENTS:
+        for planet, row in enumerate(ELEMENTS):
+            color = 2 if planet == EARTH else 1
+            if mode == "concentric":
+                r = (planet + 1) * RING_STEP
+                draw.ellipse((HALF - r, HALF - r, HALF + r, HALF + r), outline=color)
+                continue
             path = []
             for step in range(1024):
                 xy = ellipse(row, TRACK_EPOCH, tau * step / 1024)
-                dx, dy = project(*xy, mode)
+                dx, dy = project(*xy, mode, planet)
                 path.append((HALF + round(dx), HALF + round(dy)))
-            draw.line(path + path[:1], fill=1)
-        image.save(ROOT / f"resources/drawables/{mode}-orbits.png", bits=1)
+            draw.line(path + path[:1], fill=color)
+        image.save(ROOT / f"resources/drawables/{mode}-orbits.png", bits=2)
 
 
 if __name__ == "__main__":

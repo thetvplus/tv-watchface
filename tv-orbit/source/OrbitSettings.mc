@@ -5,12 +5,17 @@ import Toybox.WatchUi;
 
 const FORMAT_KEY = "clockFormat";
 const COLOR_KEY = "timeColor";
-
 const SCALE_KEY = "orbitScale";
+const REFRESH_KEY = "orbitRefreshDays";
 
 function selectedScale() as Number {
     var value = Properties.getValue(SCALE_KEY);
-    return value instanceof Number && (value == LINEAR || value == LOG_SCALE) ? value : INNER_FOCUS;
+    return value instanceof Number && value >= NEAR_SCALE && value <= CONCENTRIC ? value : INNER_FOCUS;
+}
+
+function selectedRefreshDays() as Number {
+    var value = Properties.getValue(REFRESH_KEY);
+    return value instanceof Number && value >= DAILY && value <= EVERY_THREE_DAYS ? value : DEFAULT_REFRESH_DAYS;
 }
 
 function selectedColor() as Number {
@@ -37,7 +42,12 @@ class OrbitMenu extends WatchUi.Menu2InputDelegate {
                        [Graphics.COLOR_BLUE, Rez.Strings.Blue], [0x96D9AD, Rez.Strings.Green]];
         } else if (key.equals(SCALE_KEY)) {
             current = selectedScale();
-            choices = [[INNER_FOCUS, Rez.Strings.InnerScale], [LINEAR, Rez.Strings.LinearScale], [LOG_SCALE, Rez.Strings.LogScale]];
+            choices = [[INNER_FOCUS, Rez.Strings.InnerScale], [NEAR_SCALE, Rez.Strings.NearScale],
+                       [BALANCED, Rez.Strings.BalancedScale], [CONCENTRIC, Rez.Strings.ConcentricScale]];
+        } else if (key.equals(REFRESH_KEY)) {
+            current = selectedRefreshDays();
+            choices = [[DAILY, Rez.Strings.Daily], [DEFAULT_REFRESH_DAYS, Rez.Strings.EveryTwoDays],
+                       [EVERY_THREE_DAYS, Rez.Strings.EveryThreeDays]];
         } else {
             current = selectedFormat();
             choices = [[0, Rez.Strings.SystemFormat], [12, Rez.Strings.Twelve], [24, Rez.Strings.TwentyFour]];

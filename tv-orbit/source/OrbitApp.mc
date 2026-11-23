@@ -16,14 +16,9 @@ class TvOrbitApp extends Application.AppBase {
 
     function onDisplayModeChanged() as Void {
         var mode = System.getDisplayMode();
-        if (mode == System.DISPLAY_MODE_OFF) { return; }
         var view = face;
-        if (mode == System.DISPLAY_MODE_HIGH_POWER && view != null) {
-            view.nextRead = null;
-            view.seenMinute = null;
-            if (!(Application.AppBase has :onDeviceSettingChanged)) { view.syncSystem(); }
-        }
-        WatchUi.requestUpdate();
+        if (view != null) { view.setDisplayMode(mode); }
+        if (mode != System.DISPLAY_MODE_OFF) { WatchUi.requestUpdate(); }
     }
 
     function onDeviceSettingChanged(key as Symbol, value as Object) as Void {
@@ -44,6 +39,7 @@ class TvOrbitApp extends Application.AppBase {
         menu.addItem(new WatchUi.MenuItem(Rez.Strings.Format, null, FORMAT_KEY, {}));
         menu.addItem(new WatchUi.MenuItem(Rez.Strings.Color, null, COLOR_KEY, {}));
         menu.addItem(new WatchUi.MenuItem(Rez.Strings.Scale, null, SCALE_KEY, {}));
+        menu.addItem(new WatchUi.MenuItem(Rez.Strings.OrbitRefresh, null, REFRESH_KEY, {}));
         return [menu, new OrbitMenu()];
     }
 

@@ -1,7 +1,8 @@
 <drawables>
-    <bitmap id="LauncherIcon" filename="launcher.svg" dithering="none"/>
-    <bitmap id="RestRows" filename="rest-rows.svg" dithering="none"/>
-    <bitmap id="LinearOrbits" filename="linear-orbits.png" dithering="none"/>
-    <bitmap id="LogOrbits" filename="log-orbits.png" dithering="none"/>
-    <bitmap id="InnerOrbits" filename="inner-orbits.png" dithering="none"/>
+    <bitmap id="LauncherIcon" filename="launcher.svg" dithering="none" compress="true"/>
+    <bitmap id="RestRows" filename="rest-rows.svg" dithering="none" compress="true"/>
+    <bitmap id="LinearOrbits" filename="linear-orbits.png" dithering="none" compress="true"/>
+    <bitmap id="LogOrbits" filename="log-orbits.png" dithering="none" compress="true"/>
+    <bitmap id="InnerOrbits" filename="inner-orbits.png" dithering="none" compress="true"/>
+    <bitmap id="ConcentricOrbits" filename="concentric-orbits.png" dithering="none" compress="true"/>
 </drawables>
