@@ -16,6 +16,9 @@ class TvMinimalFace extends WatchUi.WatchFace {
     const HEART_INTERVAL_MS = 3000;
     const METRIC_FONT_SIZE = 38;
     const METRIC_COLUMN_STEP = 84;
+    // All active pixels from the battery through the metric row fit this band on the 265S.
+    const BAND_TOP = 32;
+    const BAND_HEIGHT = 284;
     // Visible left/right edges relative to each native digit's cell center at the 265S layout size.
     const LEADING_INK = [29, 26, 30];
     const TRAILING_INK = [29, 10, 32, 28, 33, 31, 30, 31, 29, 28];
@@ -35,6 +38,8 @@ class TvMinimalFace extends WatchUi.WatchFace {
     var clockSync as Number = CLOCK_AT_MINUTE;
     var heartOnWake as Boolean = false;
     var clock24 as Boolean = true;
+    var steps as Number?;
+    var calories as Number?;
     var stepsText as String = "--";
     var kcalText as String = "--";
     var heartRate as Number?;
@@ -136,42 +141,55 @@ class TvMinimalFace extends WatchUi.WatchFace {
             drawAod(dc, clock.hour, clock.min);
             return;
         }
+        var previousHeart = heartRate;
         updateVisible(System.getTimer());
         if (tryBackground) {
             tryBackground = false;
             try {
-                background = Graphics.createBufferedBitmap({:width => dc.getWidth(), :height => dc.getHeight()}).get() as Graphics.BufferedBitmap?;
+                background = Graphics.createBufferedBitmap({:width => dc.getWidth(), :height => BAND_HEIGHT}).get() as Graphics.BufferedBitmap?;
             } catch (e instanceof Graphics.OutOfGraphicsMemoryException) {
                 // Render directly when the graphics pool has no room for a frame.
             }
         }
         var image = background;
         if (image == null) {
-            drawBackground(dc);
+            drawBackground(dc, 0);
         } else {
             if (backgroundDirty) {
-                drawBackground(image.getDc());
+                drawBackground(image.getDc(), BAND_TOP);
                 backgroundDirty = false;
+            } else if (previousHeart != heartRate) {
+                var canvas = image.getDc();
+                // The middle metric cell starts immediately below the 20 px icon strip.
+                canvas.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+                canvas.fillRectangle(centerX - 34, 275 - BAND_TOP, 68, 40);
+                canvas.setColor(accent, Graphics.COLOR_TRANSPARENT);
+                drawHeart(canvas, BAND_TOP);
             }
-            dc.drawBitmap(0, 0, image);
+            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+            dc.clear();
+            dc.drawBitmap(0, BAND_TOP, image);
         }
-        dc.setColor(accent, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(centerX, 289, metricFont, heartRateText, CENTER);
     }
 
-    function drawBackground(dc as Graphics.Dc) as Void {
+    function drawHeart(dc as Graphics.Dc, top as Number) as Void {
+        dc.drawText(centerX, 289 - top, metricFont, heartRateText, CENTER);
+    }
+
+    function drawBackground(dc as Graphics.Dc, top as Number) as Void {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         dc.setColor(accent, Graphics.COLOR_TRANSPARENT);
-        drawBattery(dc);
+        drawBattery(dc, top);
         dc.setColor(MUTED, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(centerX, 91, Graphics.FONT_XTINY, dateText, CENTER);
+        dc.drawText(centerX, 91 - top, Graphics.FONT_XTINY, dateText, CENTER);
         dc.setColor(timeColor, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(clockX, clockY, clockFont, activeTime, CENTER);
+        dc.drawText(clockX, clockY - top, clockFont, activeTime, CENTER);
         dc.setColor(accent, Graphics.COLOR_TRANSPARENT);
-        if (icons != null) { dc.drawBitmap(centerX - METRIC_COLUMN_STEP - 10, 255, icons); }
-        dc.drawText(centerX - METRIC_COLUMN_STEP, 289, stepsFont, stepsText, CENTER);
-        dc.drawText(centerX + METRIC_COLUMN_STEP, 289, kcalFont, kcalText, CENTER);
+        if (icons != null) { dc.drawBitmap(centerX - METRIC_COLUMN_STEP - 10, 255 - top, icons); }
+        dc.drawText(centerX - METRIC_COLUMN_STEP, 289 - top, stepsFont, stepsText, CENTER);
+        drawHeart(dc, top);
+        dc.drawText(centerX + METRIC_COLUMN_STEP, 289 - top, kcalFont, kcalText, CENTER);
     }
 
     function drawAod(dc as Graphics.Dc, hour as Number, minute as Number) as Void {
@@ -185,19 +203,19 @@ class TvMinimalFace extends WatchUi.WatchFace {
         }
     }
 
-    function drawBattery(dc as Graphics.Dc) as Void {
+    function drawBattery(dc as Graphics.Dc, top as Number) as Void {
         if (!batteryIcon || batteryLevel < 0) {
-            dc.drawText(centerX, 49, Graphics.FONT_XTINY, batteryText, CENTER);
+            dc.drawText(centerX, 49 - top, Graphics.FONT_XTINY, batteryText, CENTER);
             return;
         }
         var left = centerX - 16;
         dc.setPenWidth(2);
-        dc.drawRoundedRectangle(left + 1, 43, 27, 13, 3);
+        dc.drawRoundedRectangle(left + 1, 43 - top, 27, 13, 3);
         dc.setPenWidth(1);
-        dc.fillRectangle(left + 30, 46, 2, 6);
+        dc.fillRectangle(left + 30, 46 - top, 2, 6);
         if (batteryLevel > 0) {
             // Both the first and last percent are distinguishable from empty and full.
-            dc.fillRectangle(left + 4, 46, 1 + (batteryLevel - 1) * 21 / 99, 7);
+            dc.fillRectangle(left + 4, 46 - top, 1 + (batteryLevel - 1) * 21 / 99, 7);
         }
     }
 
@@ -233,6 +251,7 @@ class TvMinimalFace extends WatchUi.WatchFace {
                 totalsSecond = -1;
             }
             if (totalsSecond < 0 || dateText.equals("")) {
+                backgroundDirty = true;
                 var weekday = (date.day_of_week as Number) - 1;
                 dateText = date.day.toString() + " · " + (WatchUi.loadResource(WEEKDAYS[weekday]) as String);
             }
@@ -244,10 +263,10 @@ class TvMinimalFace extends WatchUi.WatchFace {
             var level = System.getSystemStats().battery.toNumber();
             if (level < 0 || level > 100) { level = -1; }
             if (level != batteryLevel) {
+                backgroundDirty = true;
                 batteryLevel = level;
                 batteryText = (level < 0) ? "--" : level.toString() + "%";
             }
-            backgroundDirty = true;
             totalsSecond = seconds;
             untilTotals = interval * 60;
         }
@@ -264,10 +283,18 @@ class TvMinimalFace extends WatchUi.WatchFace {
 
     function readActivityTotals() as Void {
         var info = ActivityMonitor.getInfo();
-        stepsText = formatMetric(info.steps);
-        kcalText = formatMetric(info.calories);
-        stepsFont = fitMetricFont(stepsText);
-        kcalFont = fitMetricFont(kcalText);
+        if (steps != info.steps) {
+            steps = info.steps;
+            stepsText = formatMetric(steps);
+            stepsFont = fitMetricFont(stepsText);
+            backgroundDirty = true;
+        }
+        if (calories != info.calories) {
+            calories = info.calories;
+            kcalText = formatMetric(calories);
+            kcalFont = fitMetricFont(kcalText);
+            backgroundDirty = true;
+        }
     }
 
     function fitMetricFont(text as String) as Graphics.FontType {

@@ -1,6 +1,6 @@
 # tv-orbit
 
-v1.1.0 · Forerunner 265S · [返回表盘目录](../)
+v1.1.1 · Forerunner 265S · [返回表盘目录](../)
 
 Forerunner 265S 的太阳系表盘。太阳位于圆屏正中心，八颗行星各有一条轨道。表缘上方显示本地月日，下方用 Garmin 系统小字显示时间，12 小时制的 AM／PM 随时间一起居中。
 
@@ -31,7 +31,7 @@ Forerunner 265S 的太阳系表盘。太阳位于圆屏正中心，八颗行星�
 
 ## 安装与更新
 
-1. 下载正式版 [TVORBIT.prg v1.1.0](https://github.com/thetvplus/tv-watchface/releases/download/tv-orbit-v1.1.0/TVORBIT.prg)，通过 USB 连接手表。
+1. 下载正式版 [TVORBIT.prg v1.1.1](https://github.com/thetvplus/tv-watchface/releases/download/tv-orbit-v1.1.1/TVORBIT.prg)，通过 USB 连接手表。
 2. 将文件复制到 `Internal Storage/GARMIN/Apps`。更新时替换同名文件以保留设置。
 3. 断开 USB，在时间页长按 UP，进入「表盘」，选择 **tv-orbit** 并应用。
 

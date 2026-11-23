@@ -14,4 +14,14 @@
     <string id="AtMinute">换分时</string>
     <string id="ThreeSeconds">每 3 秒</string>
     <string id="EverySecond">每秒</string>
+    <string id="Size">数字大小</string>
+    <string id="Height">数字高度比例</string>
+    <string id="Large">大（100%）</string>
+    <string id="MediumSize">中（80%）</string>
+    <string id="Small">小（60%）</string>
+    <string id="Normal">默认（100%）</string>
+    <string id="Tall">拉伸（125%）</string>
+    <string id="ShortHeight">压缩（75%）</string>
+    <string id="CustomHeight">自定义（50–150%）</string>
+    <string id="InvalidHeight">请输入 50 到 150 的整数百分比</string>
 </strings>

@@ -1,7 +1,7 @@
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
     <iq:application id="549c40793b9d4521a50e982122526e9f" type="watchface"
         entry="TvLedApp" name="@Strings.AppName" launcherIcon="@Drawables.LauncherIcon"
-        minApiLevel="5.0.0" version="1.0.0">
+        minApiLevel="5.0.0" version="1.1.0">
         <iq:products><iq:product id="fr265s"/></iq:products>
         <iq:permissions/>
         <iq:languages>

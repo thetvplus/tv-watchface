@@ -11,8 +11,8 @@ on:
         default: false
 
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  group: release-${{ startsWith(github.ref_name, 'tv-led-') && 'led' || startsWith(github.ref_name, 'tv-orbit-') && 'orbit' || startsWith(github.ref_name, 'tv-terminal-') && 'terminal' || 'minimal' }}
+  queue: max
 
 permissions:
   contents: read
@@ -91,6 +91,19 @@ jobs:
           $title = if ($env:FACE_DIR -eq 'tv-minimal') { 'tv Minimal' } else { $env:FACE_DIR }
           $preview = $env:FACE_VERSION.Contains('-preview.')
           $isPreview = $preview.ToString().ToLowerInvariant()
+          # Previews stay in drafts. Serialize public replacements by face, including retries.
+          $older = @()
+          if (!$preview) {
+            $prefix = if ($env:FACE_DIR -eq 'tv-minimal') { 'v' } else { "$env:FACE_DIR-v" }
+            $pattern = '^' + [regex]::Escape($prefix) + '(\d+\.\d+\.\d+(?:-preview\.\d+)?)$'
+            $public = gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" --jq '.[] | select(.draft == false) | .tag_name'
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            foreach ($sibling in $public) {
+              if ($sibling -ceq $tag -or $sibling -cnotmatch $pattern) { continue }
+              if ([semver]$Matches[1] -ge [semver]$env:FACE_VERSION) { throw "A newer release already exists: $sibling" }
+              $older += $sibling
+            }
+          }
           $release = gh release view $tag --json isDraft,isImmutable,assets 2>$null | ConvertFrom-Json
           if ($env:REBUILD_RELEASE -eq 'true' -and $release) {
             if ($release.isImmutable) { throw "Cannot replace immutable release $tag" }
@@ -103,7 +116,7 @@ jobs:
             $summary = @{
               'tv-minimal'  = '系统数字时钟、心率、步数及热量，支持电量和取样设置。'
               'tv-terminal' = '终端风格时钟、日期与电量，三行数据及对齐方式可选。'
-              'tv-led'      = '复古七段时钟，跟随系统 12／24 小时制，支持自定义颜色和亮屏校时。'
+              'tv-led'      = '复古七段时钟，跟随系统 12／24 小时制，支持三档数字大小、50–150% 自定义高度、颜色和亮屏校时。'
               'tv-orbit'    = '八颗行星的日心星图。亮蓝色地球更易辨认，支持四种轨道样式（含等距同心圆），位置可选每 1、2 或 3 天更新，默认每 2 天。'
             }[$env:FACE_DIR]
             $notes = "$title v$env:FACE_VERSION`n`n$summary`n`nForerunner 265S · English / 简体中文 / 繁體中文.`n`n[Installation and performance / 安装与性能]($readme)`n`nSHA-256: $digest"
@@ -130,9 +143,20 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $remote = @($uploaded.assets | Where-Object name -CEQ $file)
           if ($remote.Count -ne 1 -or $remote[0].digest -cne "sha256:$digest") { throw "Release asset digest mismatch for $tag" }
-          if ($release.isDraft) {
+          if ($release.isDraft -and !$preview) {
             # Existing Minimal installations use releases/latest/download/TVMIN.prg.
-            $latest = if ($preview -or $env:FACE_DIR -ne 'tv-minimal') { 'false' } else { 'true' }
+            $latest = if ($env:FACE_DIR -ne 'tv-minimal') { 'false' } else { 'true' }
             gh release edit $tag --draft=false "--latest=$latest" "--prerelease=$isPreview"
             if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          if ($older.Count) {
+            $check = Join-Path $env:RUNNER_TEMP $file
+            $url = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/releases/download/$tag/$file"
+            curl.exe --fail --location --retry 4 --retry-all-errors --silent --show-error --output $check $url
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            if ((Get-FileHash $check).Hash.ToLowerInvariant() -cne $digest) { throw "Published download differs from signed build" }
+            foreach ($sibling in $older) {
+              gh release delete $sibling --yes
+              if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            }
           }

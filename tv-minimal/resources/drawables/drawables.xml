@@ -1,5 +1,5 @@
 <drawables>
-    <bitmap id="LauncherIcon" filename="launcher.png"/>
-    <bitmap id="MetricIcons" filename="metrics.svg" dithering="none"/>
-    <bitmap id="AodMask" filename="aod-mask.svg" dithering="none"/>
+    <bitmap id="LauncherIcon" filename="launcher.png" compress="true"/>
+    <bitmap id="MetricIcons" filename="metrics.svg" dithering="none" compress="true"/>
+    <bitmap id="AodMask" filename="aod-mask.svg" dithering="none" compress="true"/>
 </drawables>

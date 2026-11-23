@@ -93,6 +93,12 @@ def make_font(name, width, height, thickness, gap, dim=False):
 if __name__ == "__main__":
     make_font("led", width=43, height=71, thickness=7, gap=11)
     make_font("dim-led", width=29, height=45, thickness=5, gap=8, dim=True)
+    # Mask destination pixels after resizing. Alternating checkerboards preserve thin crossbars.
+    mask = Image.new("RGBA", (192, 80))
+    for y in range(mask.height):
+        for x in range(y & 1, mask.width, 2):
+            mask.putpixel((x, y), (0, 0, 0, 255))
+    mask.save(RES / "drawables" / "rest-pixels.png", optimize=True)
     icon = Image.new("RGBA", (60, 60))
     eight = numeral("8", 31, 49, 5)
     icon.paste("#FF3924", ((60 - eight.width) // 2, (60 - eight.height) // 2), eight)

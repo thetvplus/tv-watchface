@@ -19,8 +19,7 @@ function selectedRefreshDays() as Number {
 }
 
 function selectedColor() as Number {
-    var color = parseHexColor(Properties.getValue(COLOR_KEY));
-    return color == null ? Graphics.COLOR_WHITE : color;
+    return colorSetting(COLOR_KEY, Graphics.COLOR_WHITE);
 }
 
 function selectedFormat() as Number {
@@ -53,12 +52,7 @@ class OrbitMenu extends WatchUi.Menu2InputDelegate {
             choices = [[0, Rez.Strings.SystemFormat], [12, Rez.Strings.Twelve], [24, Rez.Strings.TwentyFour]];
         }
         var menu = new WatchUi.Menu2({:title => item.getLabel()});
-        var focus = choices.size();
-        for (var i = 0; i < choices.size(); i++) {
-            var id = choices[i][0] as Number;
-            menu.addItem(new WatchUi.MenuItem(choices[i][1] as ResourceId, null, id, {}));
-            if (id == current) { focus = i; }
-        }
+        var focus = addPresets(menu, choices, current);
         if (colors) {
             menu.addItem(new WatchUi.MenuItem(Rez.Strings.Custom, "#" + current.format("%06X"), -1, {}));
         }
@@ -74,26 +68,10 @@ class OrbitChoice extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId() as Number;
         if (id == -1) {
-            WatchUi.pushView(new WatchUi.TextPicker(selectedColor().format("%06X")), new OrbitHex(item), WatchUi.SLIDE_UP);
+            WatchUi.pushView(new WatchUi.TextPicker(selectedColor().format("%06X")), new HexDelegate(key, item), WatchUi.SLIDE_UP);
             return;
         }
         saveSetting(key, key.equals(COLOR_KEY) ? id.format("%06X") : id);
         WatchUi.popView(WatchUi.SLIDE_DOWN);
-    }
-}
-
-class OrbitHex extends WatchUi.TextPickerDelegate {
-    var item as WatchUi.MenuItem;
-    function initialize(row as WatchUi.MenuItem) { TextPickerDelegate.initialize(); item = row; }
-    function onTextEntered(value as String, changed as Boolean) as Boolean {
-        if (!changed) { return true; }
-        var rgb = parseHexColor(value);
-        if (rgb == null) { WatchUi.showToast(Rez.Strings.InvalidHex, null); }
-        else {
-            var hex = rgb.format("%06X");
-            saveSetting(COLOR_KEY, hex);
-            item.setSubLabel("#" + hex);
-        }
-        return true;
     }
 }

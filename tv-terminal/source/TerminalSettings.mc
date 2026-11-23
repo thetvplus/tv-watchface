@@ -24,8 +24,7 @@ function phosphorColor(key as String) as Number {
 }
 
 function savedColor(key as String) as Number {
-    var color = parseHexColor(Properties.getValue(key));
-    return color == null ? phosphorColor(key) : color;
+    return colorSetting(key, phosphorColor(key));
 }
 
 function savedChoice(key as String, fallback as Number, count as Number) as Number {
@@ -117,30 +116,5 @@ class PreferenceDelegate extends WatchUi.Menu2InputDelegate {
             }
             WatchUi.popView(WatchUi.SLIDE_DOWN);
         }
-    }
-}
-
-class HexDelegate extends WatchUi.TextPickerDelegate {
-    var key as String;
-    var row as WatchUi.MenuItem;
-
-    function initialize(propertyKey as String, item as WatchUi.MenuItem) {
-        TextPickerDelegate.initialize();
-        key = propertyKey;
-        row = item;
-    }
-
-    function onTextEntered(text as String, changed as Boolean) as Boolean {
-        if (changed) {
-            var color = parseHexColor(text);
-            if (color == null) {
-                WatchUi.showToast(Rez.Strings.InvalidHex, null);
-            } else {
-                var hex = color.format("%06X");
-                saveSetting(key, hex);
-                row.setSubLabel("#" + hex);
-            }
-        }
-        return true;
     }
 }

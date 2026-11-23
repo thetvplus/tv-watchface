@@ -44,10 +44,16 @@ function distanceText(cm as Number?, metric as Boolean) as String {
 class TerminalFace extends WatchUi.WatchFace {
     const LEFT = Graphics.TEXT_JUSTIFY_LEFT;
     const TABLE_WIDTH = 196;
+    // The 265S content fits this centered band for both alignments and time formats.
+    const BAND_WIDTH = 248;
+    const BAND_HEIGHT = 204;
+    const BAND_TOP = 80;
+    var bandX as Number = 56;
     var centered as Boolean = false;
     var clockChoice as Number = 0;
     var use24 as Boolean = true;
     var metricUnits as Boolean = true;
+    var fields as Number = (1 << PULSE) | (1 << STEPS) | (1 << KCAL);
     var rows as Array<Number> = [PULSE, STEPS, KCAL];
     var values as Array<String> = ["-- BPM", "--", "--", "--", "--"];
     var wakeOnly as Boolean = true;
@@ -81,6 +87,7 @@ class TerminalFace extends WatchUi.WatchFace {
     function initialize() { WatchFace.initialize(); }
 
     function onLayout(dc as Graphics.Dc) as Void {
+        bandX = (dc.getWidth() - BAND_WIDTH) / 2;
         clockFont = WatchUi.loadResource(Rez.Fonts.Clock) as WatchUi.FontResource;
         textFont = WatchUi.loadResource(Rez.Fonts.Console) as WatchUi.FontResource;
         sleepFont = WatchUi.loadResource(Rez.Fonts.SleepClock) as WatchUi.FontResource;
@@ -102,26 +109,28 @@ class TerminalFace extends WatchUi.WatchFace {
         var device = System.getDeviceSettings();
         clockChoice = savedChoice(CLOCK_KEY, 0, 3);
         setClockFormat(uses24Hours(clockChoice, device.is24Hour));
-        var hadPulse = rows.indexOf(PULSE) >= 0;
+        var previousFields = fields;
+        fields = 0;
         for (var i = 0; i < rows.size(); i++) {
             var field = savedChoice(ROW_KEYS[i], i, FIELD_LABELS.size());
+            fields |= 1 << field;
             if (rows[i] != field) {
                 rows[i] = field;
-                invalidateStats();
                 dirty = true;
             }
         }
+        if ((fields & ~previousFields & ~(1 << PULSE)) != 0) { invalidateStats(); }
         setDistanceUnits(device.distanceUnits == System.UNIT_METRIC);
         var interval = SAMPLE_INTERVALS[savedChoice(TOTALS_KEY, 1, SAMPLE_INTERVALS.size())];
         if (sampleInterval != interval) {
             sampleInterval = interval;
             nextCheck = null;
         }
-        var hasPulse = rows.indexOf(PULSE) >= 0;
+        var pulseChanged = ((previousFields ^ fields) & (1 << PULSE)) != 0;
         var newWakeOnly = savedChoice(HEART_KEY, 0, 2) == 0;
-        if (hadPulse != hasPulse || wakeOnly != newWakeOnly) { pulseTick = null; }
+        if (pulseChanged || wakeOnly != newWakeOnly) { pulseTick = null; }
         wakeOnly = newWakeOnly;
-        if (hadPulse && !hasPulse) {
+        if (pulseChanged && (fields & (1 << PULSE)) == 0) {
             bpm = null;
             values[PULSE] = "-- BPM";
             historyExpires = 0;
@@ -165,7 +174,7 @@ class TerminalFace extends WatchUi.WatchFace {
     function setDistanceUnits(metric as Boolean) as Boolean {
         if (metric == metricUnits) { return false; }
         metricUnits = metric;
-        if (rows.indexOf(DISTANCE) < 0) { return false; }
+        if ((fields & (1 << DISTANCE)) == 0) { return false; }
         invalidateStats();
         return true;
     }
@@ -202,7 +211,7 @@ class TerminalFace extends WatchUi.WatchFace {
 
     // One shared margin keeps even the lowest left-aligned data row inside the round panel.
     function lineX(dc as Graphics.Dc, width as Number) as Number {
-        return centered ? (dc.getWidth() - width) / 2 : 68;
+        return (dc.getWidth() - (centered ? width : 224)) / 2;
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
@@ -216,7 +225,8 @@ class TerminalFace extends WatchUi.WatchFace {
             dc.setColor(sleepInk, Graphics.COLOR_TRANSPARENT);
             // The font only inks even rows. A one-pixel shift rests every lit row next minute.
             var inset = value.find("1") == 0 ? 3 : 0;
-            dc.drawText(lineX(dc, dc.getTextWidthInPixels(value, sleepFont) - 3 - inset) - inset,
+            var left = centered ? lineX(dc, dc.getTextWidthInPixels(value, sleepFont) - 3 - inset) : 68;
+            dc.drawText(left - inset,
                 (dc.getHeight() - 30) / 2 + (clock.min & 1), sleepFont, value, LEFT);
             return;
         }
@@ -229,7 +239,7 @@ class TerminalFace extends WatchUi.WatchFace {
             tryFrame = false;
             try {
                 var colors = [Graphics.COLOR_BLACK, ruleInk, labelInk, textInk, timeInk];
-                frame = Graphics.createBufferedBitmap({:width => dc.getWidth(), :height => dc.getHeight(),
+                frame = Graphics.createBufferedBitmap({:width => BAND_WIDTH, :height => BAND_HEIGHT,
                     :palette => colors}).get() as Graphics.BufferedBitmap?;
             } catch (error instanceof Graphics.OutOfGraphicsMemoryException) {
                 // Direct drawing also works when another view is using the graphics pool.
@@ -237,19 +247,21 @@ class TerminalFace extends WatchUi.WatchFace {
         }
         var cached = frame;
         if (cached == null) {
-            drawTerminal(dc);
+            drawTerminal(dc, 0);
         } else {
             if (dirty) {
-                drawTerminal(cached.getDc());
+                drawTerminal(cached.getDc(), BAND_TOP);
                 dirty = false;
             } else if (bpm != previousPulse) {
                 var canvas = cached.getDc();
                 var table = lineX(canvas, TABLE_WIDTH);
                 for (var i = 0; i < rows.size(); i++) {
-                    if (rows[i] == PULSE) { drawRow(canvas, i, table, true); }
+                    if (rows[i] == PULSE) { drawRow(canvas, i, table, BAND_TOP, true); }
                 }
             }
-            dc.drawBitmap(0, 0, cached);
+            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+            dc.clear();
+            dc.drawBitmap(bandX, BAND_TOP, cached);
         }
     }
 
@@ -300,12 +312,12 @@ class TerminalFace extends WatchUi.WatchFace {
             batteryText = level < 0 ? "--" : level.toString() + "%";
             dirty = true;
         }
-        if (rows[0] == PULSE && rows[1] == PULSE && rows[2] == PULSE) { return; }
+        if (fields == (1 << PULSE)) { return; }
         var info = ActivityMonitor.getInfo();
-        if (rows.indexOf(STEPS) >= 0) { updateValue(STEPS, counterText(info.steps)); }
-        if (rows.indexOf(KCAL) >= 0) { updateValue(KCAL, counterText(info.calories)); }
-        if (rows.indexOf(DISTANCE) >= 0) { updateValue(DISTANCE, distanceText(info.distance, metricUnits)); }
-        if (rows.indexOf(FLOORS) >= 0) { updateValue(FLOORS, counterText(info.floorsClimbed)); }
+        if ((fields & (1 << STEPS)) != 0) { updateValue(STEPS, counterText(info.steps)); }
+        if ((fields & (1 << KCAL)) != 0) { updateValue(KCAL, counterText(info.calories)); }
+        if ((fields & (1 << DISTANCE)) != 0) { updateValue(DISTANCE, distanceText(info.distance, metricUnits)); }
+        if ((fields & (1 << FLOORS)) != 0) { updateValue(FLOORS, counterText(info.floorsClimbed)); }
     }
 
     function updateValue(field as Number, value as String) as Void {
@@ -335,7 +347,7 @@ class TerminalFace extends WatchUi.WatchFace {
     }
 
     function refreshPulse(tick as Number) as Void {
-        if (rows.indexOf(PULSE) < 0) { return; }
+        if ((fields & (1 << PULSE)) == 0) { return; }
         if (pulseTick != null && ((wakeOnly && bpm != null) || tick - (pulseTick as Number) < 3000)) {
             return;
         }
@@ -357,41 +369,41 @@ class TerminalFace extends WatchUi.WatchFace {
         values[PULSE] = (rate == null ? "--" : rate.toString()) + " BPM";
     }
 
-    function drawTerminal(dc as Graphics.Dc) as Void {
+    function drawTerminal(dc as Graphics.Dc, top as Number) as Void {
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
         dc.clear();
         var table = lineX(dc, TABLE_WIDTH);
         var dateWidth = dc.getTextWidthInPixels(dateText, textFont) - 3;
-        var batteryWidth = batteryIcon ? 27 : dc.getTextWidthInPixels(batteryText, textFont) - 3;
+        var batteryWidth = !centered || batteryIcon ? 27 : dc.getTextWidthInPixels(batteryText, textFont) - 3;
         var header = lineX(dc, dateWidth + 18 + batteryWidth);
         dc.setColor(textInk, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(header, 84, textFont, dateText, LEFT);
+        dc.drawText(header, 84 - top, textFont, dateText, LEFT);
         var meterX = header + dateWidth + 18;
         if (batteryIcon) {
-            dc.drawRectangle(meterX, 87, 24, 12);
-            dc.fillRectangle(meterX + 24, 90, 3, 6);
-            if (battery > 0 && battery <= 100) { dc.fillRectangle(meterX + 2, 89, 1 + (battery - 1) * 19 / 99, 8); }
+            dc.drawRectangle(meterX, 87 - top, 24, 12);
+            dc.fillRectangle(meterX + 24, 90 - top, 3, 6);
+            if (battery > 0 && battery <= 100) { dc.fillRectangle(meterX + 2, 89 - top, 1 + (battery - 1) * 19 / 99, 8); }
         } else {
-            dc.drawText(meterX, 84, textFont, batteryText, LEFT);
+            dc.drawText(meterX, 84 - top, textFont, batteryText, LEFT);
         }
 
-        var digits = dc.getTextWidthInPixels(timeText, clockFont);
+        var digits = centered || !use24 ? dc.getTextWidthInPixels(timeText, clockFont) : 0;
         // Justify the actual ink. BMFont advances include a trailing gap; a leading 1 is inset.
         var inset = timeText.find("1") == 0 ? 5 : 0;
-        var width = use24 ? digits - 6 : digits + 4 + dc.getTextWidthInPixels(periodText, textFont) - 3;
+        var width = !centered || use24 ? digits - 6 : digits + 4 + dc.getTextWidthInPixels(periodText, textFont) - 3;
         var start = lineX(dc, width - inset) - inset;
         dc.setColor(timeInk, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(start, 119, clockFont, timeText, LEFT);
-        if (!use24) { dc.drawText(start + digits + 4, 162, textFont, periodText, LEFT); }
+        dc.drawText(start, 119 - top, clockFont, timeText, LEFT);
+        if (!use24) { dc.drawText(start + digits + 4, 162 - top, textFont, periodText, LEFT); }
 
         dc.setColor(ruleInk, Graphics.COLOR_TRANSPARENT);
-        for (var dx = 0; dx < TABLE_WIDTH; dx += 8) { dc.fillRectangle(table + dx, 198, 4, 2); }
-        for (var i = 0; i < rows.size(); i++) { drawRow(dc, i, table, false); }
+        for (var dx = 0; dx < TABLE_WIDTH; dx += 8) { dc.fillRectangle(table + dx, 198 - top, 4, 2); }
+        for (var i = 0; i < rows.size(); i++) { drawRow(dc, i, table, top, false); }
     }
 
-    function drawRow(dc as Graphics.Dc, index as Number, x as Number, erase as Boolean) as Void {
+    function drawRow(dc as Graphics.Dc, index as Number, x as Number, top as Number, erase as Boolean) as Void {
         var field = rows[index];
-        var y = 213 + 25 * index;
+        var y = 213 - top + 25 * index;
         if (erase) {
             dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
             dc.fillRectangle(x, y, TABLE_WIDTH, 18);

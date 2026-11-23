@@ -14,4 +14,14 @@
     <string id="AtMinute">On minute change</string>
     <string id="ThreeSeconds">Every 3 seconds</string>
     <string id="EverySecond">Every second</string>
+    <string id="Size">Digit size</string>
+    <string id="Height">Digit height</string>
+    <string id="Large">Large (100%)</string>
+    <string id="MediumSize">Medium (80%)</string>
+    <string id="Small">Small (60%)</string>
+    <string id="Normal">Default (100%)</string>
+    <string id="Tall">Stretched (125%)</string>
+    <string id="ShortHeight">Compressed (75%)</string>
+    <string id="CustomHeight">Custom (50–150%)</string>
+    <string id="InvalidHeight">Enter 50 to 150 percent</string>
 </strings>

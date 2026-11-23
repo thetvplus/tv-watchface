@@ -2,10 +2,22 @@
     <properties>
         <property id="timeColor" type="string">FF3924</property>
         <property id="clockSync" type="number">60</property>
+        <property id="digitSize" type="number">100</property>
+        <property id="digitHeight" type="number">100</property>
     </properties>
     <settings liveValidation="true">
         <setting propertyKey="@Properties.timeColor" title="@Strings.ColorHex">
             <settingConfig type="alphaNumeric" maxLength="7"/>
+        </setting>
+        <setting propertyKey="@Properties.digitSize" title="@Strings.Size">
+            <settingConfig type="list">
+                <listEntry value="100">@Strings.Large</listEntry>
+                <listEntry value="80">@Strings.MediumSize</listEntry>
+                <listEntry value="60">@Strings.Small</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.digitHeight" title="@Strings.Height">
+            <settingConfig type="numeric" min="50" max="150" errorMessage="@Strings.InvalidHeight"/>
         </setting>
         <setting propertyKey="@Properties.clockSync" title="@Strings.ClockSync">
             <settingConfig type="numeric" min="1" max="60" errorMessage="@Strings.InvalidSeconds"/>
