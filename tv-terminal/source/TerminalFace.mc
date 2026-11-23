@@ -10,6 +10,7 @@ import Toybox.WatchUi;
 
 const WEEKDAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const SAMPLE_INTERVALS = [60, 300, 900];
+const HEART_HISTORY_SECONDS = 900;
 const FIELD_LABELS = ["PULSE", "STEPS", "KCAL", "DIST", "FLOORS"];
 
 function tinted(color as Number, percent as Number) as Number {
@@ -44,6 +45,7 @@ class TerminalFace extends WatchUi.WatchFace {
     const LEFT = Graphics.TEXT_JUSTIFY_LEFT;
     const TABLE_WIDTH = 196;
     var centered as Boolean = false;
+    var clockChoice as Number = 0;
     var use24 as Boolean = true;
     var metricUnits as Boolean = true;
     var rows as Array<Number> = [PULSE, STEPS, KCAL];
@@ -55,9 +57,9 @@ class TerminalFace extends WatchUi.WatchFace {
     var historyExpires as Number = 0;
     var timeInk as Number = PHOSPHOR_TIME;
     var textInk as Number = PHOSPHOR_TEXT;
-    var labelInk as Number = PHOSPHOR_TEXT;
-    var ruleInk as Number = PHOSPHOR_TEXT;
-    var sleepInk as Number = PHOSPHOR_TIME;
+    var labelInk as Number = tinted(PHOSPHOR_TEXT, 77);
+    var ruleInk as Number = tinted(PHOSPHOR_TEXT, 41);
+    var sleepInk as Number = tinted(PHOSPHOR_TIME, 50);
     var clockFont as Graphics.FontType = Graphics.FONT_NUMBER_HOT;
     var textFont as Graphics.FontType = Graphics.FONT_XTINY;
     var sleepFont as Graphics.FontType = Graphics.FONT_MEDIUM;
@@ -92,33 +94,97 @@ class TerminalFace extends WatchUi.WatchFace {
     }
 
     function loadSettings() as Void {
-        centered = savedChoice(ALIGN_KEY, ALIGN_LEFT, 2) == ALIGN_CENTER;
-        batteryIcon = savedChoice(BATTERY_KEY, 0, 2) == 1;
+        var newCentered = savedChoice(ALIGN_KEY, ALIGN_LEFT, 2) == ALIGN_CENTER;
+        var newBatteryIcon = savedChoice(BATTERY_KEY, 0, 2) == 1;
+        if (newCentered != centered || newBatteryIcon != batteryIcon) { dirty = true; }
+        centered = newCentered;
+        batteryIcon = newBatteryIcon;
         var device = System.getDeviceSettings();
-        use24 = uses24Hours(savedChoice(CLOCK_KEY, 0, 3), device.is24Hour);
-        if (metricUnits != (device.distanceUnits == System.UNIT_METRIC)) { sampledSecond = -1; }
-        metricUnits = device.distanceUnits == System.UNIT_METRIC;
+        clockChoice = savedChoice(CLOCK_KEY, 0, 3);
+        setClockFormat(uses24Hours(clockChoice, device.is24Hour));
+        var hadPulse = rows.indexOf(PULSE) >= 0;
         for (var i = 0; i < rows.size(); i++) {
             var field = savedChoice(ROW_KEYS[i], i, FIELD_LABELS.size());
-            if (rows[i] != field) { sampledSecond = -1; }
-            rows[i] = field;
+            if (rows[i] != field) {
+                rows[i] = field;
+                invalidateStats();
+                dirty = true;
+            }
         }
-        sampleInterval = SAMPLE_INTERVALS[savedChoice(TOTALS_KEY, 1, 3)];
-        wakeOnly = savedChoice(HEART_KEY, 0, 2) == 0;
-        timeInk = savedColor(TIME_COLOR_KEY);
-        textInk = savedColor(TEXT_COLOR_KEY);
-        labelInk = tinted(textInk, 77);
-        ruleInk = tinted(textInk, 41);
-        sleepInk = tinted(timeInk, 50);
+        setDistanceUnits(device.distanceUnits == System.UNIT_METRIC);
+        var interval = SAMPLE_INTERVALS[savedChoice(TOTALS_KEY, 1, SAMPLE_INTERVALS.size())];
+        if (sampleInterval != interval) {
+            sampleInterval = interval;
+            nextCheck = null;
+        }
+        var hasPulse = rows.indexOf(PULSE) >= 0;
+        var newWakeOnly = savedChoice(HEART_KEY, 0, 2) == 0;
+        if (hadPulse != hasPulse || wakeOnly != newWakeOnly) { pulseTick = null; }
+        wakeOnly = newWakeOnly;
+        if (hadPulse && !hasPulse) {
+            bpm = null;
+            values[PULSE] = "-- BPM";
+            historyExpires = 0;
+        }
+
+        var newTimeInk = savedColor(TIME_COLOR_KEY);
+        var newTextInk = savedColor(TEXT_COLOR_KEY);
+        if (timeInk != newTimeInk || textInk != newTextInk) {
+            timeInk = newTimeInk;
+            textInk = newTextInk;
+            labelInk = tinted(textInk, 77);
+            ruleInk = tinted(textInk, 41);
+            sleepInk = tinted(timeInk, 50);
+            discardFrame();
+        }
+    }
+
+    function applySettings() as Void {
+        loadSettings();
+        requestVisibleUpdate();
+    }
+
+    function applyDeviceSetting(key as Symbol, value as Object) as Void {
+        var changed = false;
+        if (key == :is24Hour && clockChoice == 0) {
+            changed = setClockFormat(value as Boolean);
+        } else if (key == :distanceUnits) {
+            changed = setDistanceUnits(value == System.UNIT_METRIC);
+        }
+        if (changed) { requestVisibleUpdate(); }
+    }
+
+    function setClockFormat(newUse24 as Boolean) as Boolean {
+        if (newUse24 == use24) { return false; }
+        use24 = newUse24;
         shownMinute = -1;
         nextCheck = null;
-        pulseTick = null;
-        discardFrame();
+        return true;
+    }
+
+    function setDistanceUnits(metric as Boolean) as Boolean {
+        if (metric == metricUnits) { return false; }
+        metricUnits = metric;
+        if (rows.indexOf(DISTANCE) < 0) { return false; }
+        invalidateStats();
+        return true;
+    }
+
+    function invalidateStats() as Void {
+        sampledSecond = -1;
+        nextCheck = null;
+    }
+
+    function requestVisibleUpdate() as Void {
+        if (mode != System.DISPLAY_MODE_OFF) { WatchUi.requestUpdate(); }
     }
 
     function onShow() as Void {
-        loadSettings();
         mode = System.getDisplayMode();
+        loadSettings();
+        shownMinute = -1;
+        nextCheck = null;
+        pulseTick = null;
     }
 
     function onHide() as Void { discardFrame(); }
@@ -131,7 +197,7 @@ class TerminalFace extends WatchUi.WatchFace {
         if (mode == System.DISPLAY_MODE_HIGH_POWER && !(Application.AppBase has :onDeviceSettingChanged)) {
             loadSettings();
         }
-        if (mode != System.DISPLAY_MODE_OFF) { WatchUi.requestUpdate(); }
+        requestVisibleUpdate();
     }
 
     // One shared margin keeps even the lowest left-aligned data row inside the round panel.
@@ -156,8 +222,9 @@ class TerminalFace extends WatchUi.WatchFace {
         }
 
         var tick = System.getTimer();
+        var previousPulse = bpm;
         if (nextCheck == null || tick - (nextCheck as Number) >= 0) { refreshClock(Time.now(), tick); }
-        var pulseChanged = refreshPulse(tick);
+        refreshPulse(tick);
         if (tryFrame) {
             tryFrame = false;
             try {
@@ -175,10 +242,11 @@ class TerminalFace extends WatchUi.WatchFace {
             if (dirty) {
                 drawTerminal(cached.getDc());
                 dirty = false;
-            } else if (pulseChanged) {
+            } else if (bpm != previousPulse) {
                 var canvas = cached.getDc();
+                var table = lineX(canvas, TABLE_WIDTH);
                 for (var i = 0; i < rows.size(); i++) {
-                    if (rows[i] == PULSE) { drawRow(canvas, i); }
+                    if (rows[i] == PULSE) { drawRow(canvas, i, table, true); }
                 }
             }
             dc.drawBitmap(0, 0, cached);
@@ -188,67 +256,88 @@ class TerminalFace extends WatchUi.WatchFace {
     function refreshClock(now as Time.Moment, tick as Number) as Void {
         var second = now.value();
         var minute = second / 60;
-        // Recheck near the next minute. Repeated high-power callbacks only blit the frame.
-        nextCheck = tick + (59 - second % 60) * 1000;
-        if (minute == shownMinute) { return; }
-        shownMinute = minute;
-        var date = Gregorian.info(now, Time.FORMAT_SHORT);
-        timeText = terminalTime(date.hour, date.min, use24);
-        periodText = use24 ? "" : meridiem(date.hour);
-        var month = date.month as Number;
-        var day = date.year * 10000 + month * 100 + date.day;
-        if (day != localDay) {
-            dateText = WEEKDAYS[(date.day_of_week as Number) - 1] + " " + month.format("%02d") + "-" + date.day.format("%02d");
-            localDay = day;
-            sampledSecond = -1;
+        if (minute != shownMinute) {
+            shownMinute = minute;
+            var date = Gregorian.info(now, Time.FORMAT_SHORT);
+            timeText = terminalTime(date.hour, date.min, use24);
+            periodText = use24 ? "" : meridiem(date.hour);
+            var month = date.month as Number;
+            var day = date.year * 10000 + month * 100 + date.day;
+            if (day != localDay) {
+                dateText = WEEKDAYS[(date.day_of_week as Number) - 1] + " " + month.format("%02d") + "-" + date.day.format("%02d");
+                localDay = day;
+                sampledSecond = -1;
+            }
+            dirty = true;
         }
-        if (sampledSecond < 0 || second < sampledSecond || second - sampledSecond >= sampleInterval) {
+        var untilSample = sampleInterval - (second - sampledSecond);
+        if (sampledSecond < 0 || second < sampledSecond || untilSample <= 0) {
             readStats(second);
+            untilSample = sampleInterval;
         }
-        if (historyExpires > 0 && (second >= historyExpires || second < historyExpires - 900)) {
-            bpm = null;
-            values[PULSE] = "-- BPM";
-            historyExpires = 0;
-            pulseTick = null;
+        var delay = 60 - second % 60;
+        if (untilSample < delay) { delay = untilSample; }
+        if (historyExpires > 0) {
+            var untilExpiry = historyExpires - second;
+            if (untilExpiry <= 0 || untilExpiry > HEART_HISTORY_SECONDS) {
+                bpm = null;
+                values[PULSE] = "-- BPM";
+                historyExpires = 0;
+            } else if (untilExpiry < delay) {
+                delay = untilExpiry;
+            }
         }
-        dirty = true;
+        // Wall time has whole-second precision, so check one second before the nearest deadline.
+        nextCheck = tick + (delay - 1) * 1000;
     }
 
     function readStats(second as Number) as Void {
         sampledSecond = second;
-        battery = System.getSystemStats().battery.toNumber();
-        batteryText = (battery < 0 || battery > 100) ? "--" : battery.toString() + "%";
+        var level = System.getSystemStats().battery.toNumber();
+        if (level < 0 || level > 100) { level = -1; }
+        if (level != battery) {
+            battery = level;
+            batteryText = level < 0 ? "--" : level.toString() + "%";
+            dirty = true;
+        }
         if (rows[0] == PULSE && rows[1] == PULSE && rows[2] == PULSE) { return; }
         var info = ActivityMonitor.getInfo();
-        if (rows.indexOf(STEPS) >= 0) { values[STEPS] = counterText(info.steps); }
-        if (rows.indexOf(KCAL) >= 0) { values[KCAL] = counterText(info.calories); }
-        if (rows.indexOf(DISTANCE) >= 0) { values[DISTANCE] = distanceText(info.distance, metricUnits); }
-        if (rows.indexOf(FLOORS) >= 0) { values[FLOORS] = counterText(info.floorsClimbed); }
+        if (rows.indexOf(STEPS) >= 0) { updateValue(STEPS, counterText(info.steps)); }
+        if (rows.indexOf(KCAL) >= 0) { updateValue(KCAL, counterText(info.calories)); }
+        if (rows.indexOf(DISTANCE) >= 0) { updateValue(DISTANCE, distanceText(info.distance, metricUnits)); }
+        if (rows.indexOf(FLOORS) >= 0) { updateValue(FLOORS, counterText(info.floorsClimbed)); }
+    }
+
+    function updateValue(field as Number, value as String) as Void {
+        if (!values[field].equals(value)) {
+            values[field] = value;
+            dirty = true;
+        }
     }
 
     function currentPulse() as Number? { return Activity.getActivityInfo().currentHeartRate; }
 
     function recentPulse() as Number? {
         var now = Time.now().value();
-        var history = ActivityMonitor.getHeartRateHistory(new Time.Duration(900), true);
+        var history = ActivityMonitor.getHeartRateHistory(new Time.Duration(HEART_HISTORY_SECONDS), true);
         for (var sample = history.next(); sample != null; sample = history.next()) {
             var rate = sample.heartRate;
             var when = sample.when;
             if (when == null) { continue; }
             var recorded = when.value();
-            if (now - recorded >= 900) { break; }
+            if (now - recorded >= HEART_HISTORY_SECONDS) { break; }
             if (recorded <= now && rate != null && rate > 0 && rate != ActivityMonitor.INVALID_HR_SAMPLE) {
-                historyExpires = recorded + 900;
+                historyExpires = recorded + HEART_HISTORY_SECONDS;
                 return rate;
             }
         }
         return null;
     }
 
-    function refreshPulse(tick as Number) as Boolean {
-        if (rows.indexOf(PULSE) < 0) { return false; }
+    function refreshPulse(tick as Number) as Void {
+        if (rows.indexOf(PULSE) < 0) { return; }
         if (pulseTick != null && ((wakeOnly && bpm != null) || tick - (pulseTick as Number) < 3000)) {
-            return false;
+            return;
         }
         var first = pulseTick == null;
         pulseTick = tick;
@@ -259,13 +348,13 @@ class TerminalFace extends WatchUi.WatchFace {
         } else if (first) {
             historyExpires = 0;
             rate = recentPulse();
+            if (historyExpires > 0) { nextCheck = null; }
         } else if (historyExpires > 0) {
-            return false;
+            return;
         }
-        if (bpm == rate) { return false; }
+        if (bpm == rate) { return; }
         bpm = rate;
         values[PULSE] = (rate == null ? "--" : rate.toString()) + " BPM";
-        return true;
     }
 
     function drawTerminal(dc as Graphics.Dc) as Void {
@@ -297,15 +386,16 @@ class TerminalFace extends WatchUi.WatchFace {
 
         dc.setColor(ruleInk, Graphics.COLOR_TRANSPARENT);
         for (var dx = 0; dx < TABLE_WIDTH; dx += 8) { dc.fillRectangle(table + dx, 198, 4, 2); }
-        for (var i = 0; i < rows.size(); i++) { drawRow(dc, i); }
+        for (var i = 0; i < rows.size(); i++) { drawRow(dc, i, table, false); }
     }
 
-    function drawRow(dc as Graphics.Dc, index as Number) as Void {
+    function drawRow(dc as Graphics.Dc, index as Number, x as Number, erase as Boolean) as Void {
         var field = rows[index];
-        var x = lineX(dc, TABLE_WIDTH);
         var y = 213 + 25 * index;
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(x, y, TABLE_WIDTH, 18);
+        if (erase) {
+            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+            dc.fillRectangle(x, y, TABLE_WIDTH, 18);
+        }
         dc.setColor(labelInk, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, textFont, FIELD_LABELS[field], LEFT);
         dc.setColor(textInk, Graphics.COLOR_TRANSPARENT);

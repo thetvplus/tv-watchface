@@ -1,6 +1,6 @@
 # tv-terminal
 
-v1.0.0 · Forerunner 265S · [返回表盘目录](../)
+v1.0.1 · Forerunner 265S · [返回表盘目录](../)
 
 Forerunner 265S 的 80 年代终端表盘。时间用带扫描线的点阵数字，日期、电量和读数用实心等宽字。
 
@@ -14,9 +14,11 @@ Forerunner 265S 的 80 年代终端表盘。时间用带扫描线的点阵数字
 
 ## 安装与更新
 
-1. 下载 [TVTERM.prg](https://github.com/thetvplus/tv-watchface/releases/download/tv-terminal-v1.0.0/TVTERM.prg)，通过 USB 连接手表。
+1. 下载 [TVTERM.prg](https://github.com/thetvplus/tv-watchface/releases/download/tv-terminal-v1.0.1/TVTERM.prg)，通过 USB 连接手表。
 2. 将文件复制到手表的 `Internal Storage/GARMIN/Apps`。更新时替换同名文件，保留已有设置。
 3. 传输完成后断开 USB。首次安装时，在时间页长按 UP，进入「表盘」，选择 **tv-terminal** 并应用。
+
+v1.0.1 修正非整分抬腕后的采样间隔和历史心率过期时机，减少亮屏重绘及设置切换时的重复取数。覆盖安装可沿用 v1.0.0 的设置。
 
 ## 表盘设置
 
